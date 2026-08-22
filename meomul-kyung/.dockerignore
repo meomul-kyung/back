@@ -1,0 +1,16 @@
+# 호스트 빌드 산출물 / 캐시 (컨테이너 안에서 새로 빌드하므로 제외)
+.gradle/
+build/
+out/
+
+# IDE / VCS
+.idea/
+*.iml
+.git/
+.gitignore
+
+# 기타
+*.log
+HELP.md
+README.md
+.env
