@@ -12,7 +12,7 @@
 | Language | Java 21 |
 | Framework | Spring Boot 4.1.x |
 | Build | Gradle |
-| Database | PostgreSQL (Docker Compose) |
+| Database | MySQL 8.0 (Docker Compose) |
 | External API | 한국관광공사 TourAPI (실시간 호출) |
 
 > ⚠️ **TourAPI 응답은 로컬 DB에 캐싱/저장하지 않고 실시간 호출**합니다. (공모전 규정)
@@ -25,11 +25,15 @@
 DB는 Docker로 띄우고, 애플리케이션은 IDE에서 실행합니다.
 
 ```bash
-# 1. PostgreSQL 기동 (DB만 도커로)
+# 0. 최초 1회: cp .env.example .env  (민감정보는 .env 로 관리, git 제외)
+# 1. MySQL 기동 (DB만 도커로)
 docker compose up -d
 
 # 2. 애플리케이션 실행
-#    IntelliJ에서 MeomulKyungApplication 실행
+#    IntelliJ에서 MeomulKyungApplication 실행 (.env 값 주입 필요 — EnvFile 플러그인 등)
+
+# (선택) 앱까지 전부 컨테이너로 실행
+docker compose --profile full up --build
 ```
 
 ---
