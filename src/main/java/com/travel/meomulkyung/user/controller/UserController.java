@@ -1,4 +1,4 @@
-package com.travel.meomulkyung.auth.controller;
+package com.travel.meomulkyung.user.controller;
 
 import com.travel.meomulkyung.user.domain.User;
 import com.travel.meomulkyung.user.repository.UserRepository;
@@ -14,16 +14,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 로그인 검증용 최소 엔드포인트.
+ * 회원 정보 조회/수정 엔드포인트.
  * Authorization: Bearer {JWT} 로 호출하면 현재 사용자 정보를 반환한다.
  */
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
-public class AuthController {
+public class UserController {
 
     private final UserRepository userRepository;
 
+    /** 현재 로그인한 회원 정보 + 온보딩(닉네임 등록) 완료 여부 조회 */
     @GetMapping("/me")
     public ResponseEntity<?> me(@AuthenticationPrincipal Long userId) {
         if (userId == null) {
@@ -42,9 +43,11 @@ public class AuthController {
         body.put("id", user.getId());
         body.put("email", user.getEmail());
         body.put("name", user.getName());
+        body.put("nickname", user.getNickname());
         body.put("profileImageUrl", user.getProfileImageUrl());
         body.put("provider", user.getProvider());
         body.put("role", user.getRole().name());
+        body.put("onboardingCompleted", user.isOnboardingCompleted());
         return body;
     }
 }
