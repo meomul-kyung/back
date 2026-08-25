@@ -6,6 +6,10 @@ import com.travel.meomulkyung.global.security.oauth.CustomOAuth2UserService;
 import com.travel.meomulkyung.global.security.oauth.OAuth2FailureHandler;
 import com.travel.meomulkyung.global.security.oauth.OAuth2SuccessHandler;
 import com.travel.meomulkyung.recommendation.service.TravelOptionsService;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -16,6 +20,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 
 @WebMvcTest(TravelOptionsController.class)
 @Import({TravelOptionsService.class, SecurityConfig.class})
@@ -35,6 +41,16 @@ class TravelOptionsControllerTest {
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @BeforeEach
+    void continueMockedJwtFilterChain() throws Exception {
+        doAnswer(invocation -> {
+            ((FilterChain) invocation.getArgument(2)).doFilter(
+                    (ServletRequest) invocation.getArgument(0),
+                    (ServletResponse) invocation.getArgument(1));
+            return null;
+        }).when(jwtAuthenticationFilter).doFilter(any(ServletRequest.class), any(ServletResponse.class), any(FilterChain.class));
+    }
 
     @Test
     void getTravelOptionsWithoutAccessTokenReturnsExpectedOptions() throws Exception {
