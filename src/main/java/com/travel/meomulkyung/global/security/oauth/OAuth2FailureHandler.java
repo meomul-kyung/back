@@ -26,7 +26,7 @@ public class OAuth2FailureHandler extends SimpleUrlAuthenticationFailureHandler 
                                         HttpServletResponse response,
                                         AuthenticationException exception) throws IOException {
 
-        log.warn("[OAuth2 로그인 실패] {}", exception.getMessage(), exception);
+        log.warn("OAuth2 login failed");
 
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
                 .queryParam("error", "oauth2_login_failed")
