@@ -3,7 +3,7 @@ HELP.md
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
-!**/src/test/**/build/
+!**/src/src/main/resources/static/test/**/build/
 
 ### STS ###
 .apt_generated
@@ -15,7 +15,7 @@ build/
 .sts4-cache
 bin/
 !**/src/main/**/bin/
-!**/src/test/**/bin/
+!**/src/src/main/resources/static/test/**/bin/
 
 ### IntelliJ IDEA ###
 .idea
@@ -24,7 +24,7 @@ bin/
 *.ipr
 out/
 !**/src/main/**/out/
-!**/src/test/**/out/
+!**/src/src/main/resources/static/test/**/out/
 
 ### NetBeans ###
 /nbproject/private/
@@ -40,4 +40,4 @@ out/
 .env
 
 ### local API test console (not for repo) ###
-/test/
+/src/main/resources/static/test/

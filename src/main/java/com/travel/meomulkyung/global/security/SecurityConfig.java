@@ -51,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers("/", "/error", "/favicon.ico").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/travel-options").permitAll()
                         // OAuth2 로그인 시작/콜백 엔드포인트
+                        .requestMatchers("/test/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/**").permitAll()
                         .anyRequest().authenticated()
                 )
