@@ -55,6 +55,8 @@ public class SecurityConfig {
                                 PathPatternRequestMatcher.pathPattern("/api/regions/recommendations"))
                         .defaultAuthenticationEntryPointFor(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
                                 PathPatternRequestMatcher.pathPattern("/api/itineraries/**"))
+                        .defaultAuthenticationEntryPointFor(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                                PathPatternRequestMatcher.pathPattern("/api/users/**"))
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
