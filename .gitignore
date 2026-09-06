@@ -39,5 +39,5 @@ out/
 ### env File ###
 .env
 
-### local API test console (not for repo) ###
-/src/main/resources/static/test/
+#### local API test console (not for repo) ###
+#/src/main/resources/static/test/

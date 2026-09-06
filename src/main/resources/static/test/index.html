@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>머물;경 API 테스트</title>
+<style>
+  :root{
+    --bg:#0f1216; --panel:#171b21; --line:#2a3038; --text:#e6e9ee; --dim:#98a2b3;
+    --accent:#5b8def; --ok:#3fb950; --warn:#d29922; --err:#f85149; --code:#0b0e12;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:14px/1.6 -apple-system,"Segoe UI",Roboto,"Malgun Gothic",sans-serif}
+  header{position:sticky;top:0;z-index:10;background:var(--panel);
+         border-bottom:1px solid var(--line);padding:14px 20px}
+  h1{margin:0 0 10px;font-size:17px}
+  h2{margin:28px 0 10px;font-size:15px;color:var(--accent);
+     border-bottom:1px solid var(--line);padding-bottom:6px}
+  main{max-width:1000px;margin:0 auto;padding:20px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .row + .row{margin-top:8px}
+  label{font-size:12px;color:var(--dim);min-width:96px}
+  input,select,textarea{background:var(--code);color:var(--text);border:1px solid var(--line);
+        border-radius:6px;padding:6px 9px;font:13px/1.4 ui-monospace,Consolas,monospace}
+  input[type=text],input[type=number]{width:170px}
+  .grow{flex:1;min-width:220px}
+  textarea{width:100%;min-height:64px;resize:vertical}
+  button{background:var(--accent);color:#fff;border:0;border-radius:6px;
+         padding:7px 13px;font-size:13px;cursor:pointer}
+  button:hover{filter:brightness(1.12)}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:9px;
+        padding:14px;margin-bottom:12px}
+  .head{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+  .m{font:11px/1 ui-monospace,monospace;font-weight:700;padding:4px 7px;border-radius:4px;color:#fff}
+  .GET{background:#2f6f43}.POST{background:#2f5aa8}.PUT{background:#8a6d1f}
+  .DELETE{background:#9b3b3b}.PATCH{background:#6b3f9e}
+  .path{font:12px ui-monospace,monospace;color:var(--text)}
+  .lock{font-size:11px;color:var(--warn)}
+  .desc{color:var(--dim);font-size:12.5px;margin:4px 0 10px}
+  pre{background:var(--code);border:1px solid var(--line);border-radius:6px;
+      padding:10px;margin:10px 0 0;overflow:auto;max-height:340px;
+      font:12px/1.55 ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-all}
+  .st{font-weight:700;margin-right:8px}
+  .s2{color:var(--ok)}.s4{color:var(--warn)}.s5{color:var(--err)}
+  .note{background:#1b2330;border-left:3px solid var(--accent);padding:10px 12px;
+        border-radius:0 6px 6px 0;color:var(--dim);font-size:12.5px;margin-bottom:16px}
+  .note b{color:var(--text)}
+  code{background:var(--code);padding:1px 5px;border-radius:4px;
+       font:12px ui-monospace,monospace;color:#9ecbff}
+  .tag{display:inline-block;background:var(--code);border:1px solid var(--line);
+       border-radius:4px;padding:2px 6px;margin:2px 3px 0 0;font:11px ui-monospace,monospace;
+       color:var(--dim);cursor:pointer}
+  .tag:hover{border-color:var(--accent);color:var(--text)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>머물;경 백엔드 API 테스트 콘솔</h1>
+  <div class="row">
+    <label>Base URL</label>
+    <input type="text" id="base" class="grow" value="http://localhost:8080">
+    <button class="ghost" onclick="kakao()">카카오 로그인</button>
+    <button class="ghost" onclick="clearToken()">토큰 비우기</button>
+  </div>
+  <div class="row">
+    <label>Access Token</label>
+    <input type="text" id="token" class="grow" placeholder="로그인 후 리다이렉트된 주소의 accessToken 값을 붙여넣기">
+    <span id="who" style="font-size:12px;color:var(--dim)"></span>
+  </div>
+</header>
+
+<main>
+
+<div class="note">
+  <b>사용 순서</b><br>
+  1. 백엔드를 <code>localhost:8080</code>에 띄운다 (docker compose up -d 후 앱 실행)<br>
+  2. <b>카카오 로그인</b> 클릭 → 로그인하면 프론트 콜백 주소로 <code>?accessToken=...</code>이 붙어 리다이렉트된다.
+     그 주소창에서 토큰만 복사해 위에 붙여넣는다. (토큰 유효 30분)<br>
+  3. 아래 API들을 위에서부터 실행해본다. <b>일정을 먼저 만들어야</b> 마이페이지에 볼 게 생긴다.<br><br>
+  이 페이지는 스프링이 정적 리소스로 서빙한다. 백엔드와 같은 오리진(<code>localhost:8080</code>)이라
+  CORS가 아예 걸리지 않으므로 별도 서버를 띄울 필요가 없다.
+  주소는 <code>http://localhost:8080/test/</code> 이다.
+</div>
+
+<h2>0. 공개 API (인증 불필요)</h2>
+
+<div class="card">
+  <div class="head"><span class="m GET">GET</span><span class="path">/api/travel-options</span></div>
+  <div class="desc">여행 조건 선택지 조회. 취향 태그·동행 유형·숙박 범위를 내려준다. 추천 화면 진입 시 호출.</div>
+  <button onclick="call('r0','GET','/api/travel-options',null,false)">실행</button>
+  <pre id="r0">—</pre>
+</div>
+
+<h2>1. 회원</h2>
+
+<div class="card">
+  <div class="head"><span class="m GET">GET</span><span class="path">/api/users/me</span><span class="lock">🔒</span></div>
+  <div class="desc">현재 로그인한 회원 정보와 온보딩(닉네임 등록) 완료 여부. <code>onboardingCompleted</code>가 false면 닉네임 등록 화면으로 보낸다.</div>
+  <button onclick="me()">실행</button>
+  <pre id="r1">—</pre>
+</div>
+
+<div class="card">
+  <div class="head"><span class="m GET">GET</span><span class="path">/api/users/nickname-availability</span><span class="lock">🔒</span></div>
+  <div class="desc">닉네임 중복 확인. 본인이 이미 쓰는 닉네임은 사용 가능으로 처리된다.</div>
+  <div class="row"><label>nickname</label><input type="text" id="nickChk" value="재일테스트"></div>
+  <button onclick="call('r2','GET','/api/users/nickname-availability?nickname='+enc('nickChk'))">실행</button>
+  <pre id="r2">—</pre>
+</div>
+
+<div class="card">
+  <div class="head"><span class="m PATCH">PATCH</span><span class="path">/api/users/me/onboarding</span><span class="lock">🔒</span></div>
+  <div class="desc">최초 로그인 사용자의 닉네임 등록. 성공하면 <code>onboardingCompleted</code>가 true가 된다.</div>
+  <div class="row"><label>nickname</label><input type="text" id="nickOn" value="재일테스트"></div>
+  <button onclick="call('r3','PATCH','/api/users/me/onboarding',{nickname:val('nickOn')})">실행</button>
+  <pre id="r3">—</pre>
+</div>
+
+<div class="card">
+  <div class="head"><span class="m PATCH">PATCH</span><span class="path">/api/users/me</span><span class="lock">🔒</span></div>
+  <div class="desc">개인정보(이름·닉네임) 수정.</div>
+  <div class="row">
+    <label>name</label><input type="text" id="pName" value="안재일">
+    <label>nickname</label><input type="text" id="pNick" value="재일테스트">
+  </div>
+  <button onclick="call('r4','PATCH','/api/users/me',{name:val('pName'),nickname:val('pNick')})">실행</button>
+  <pre id="r4">—</pre>
+</div>
+
+<h2>2. 지역 추천</h2>
+
+<div class="card">
+  <div class="head"><span class="m POST">POST</span><span class="path">/api/regions/recommendations</span><span class="lock">🔒</span></div>
+  <div class="desc">취향 최대 3개·동행 유형·숙박일을 기준으로 상위 3개 지역을 추천한다. 태그 가중치 매칭이라 외부 API를 쓰지 않는다.</div>
+  <div class="row">
+    <label>preferenceTags</label>
+    <input type="text" id="recTags" class="grow" value="FOOD,HISTORY">
+  </div>
+  <div class="row">
+    <label></label>
+    <span id="tagList"></span>
+  </div>
+  <div class="row">
+    <label>companionType</label>
+    <select id="recComp"><option>SOLO</option><option>COUPLE</option><option selected>FRIENDS</option><option>FAMILY</option></select>
+    <label>nights</label><input type="number" id="recNights" value="2" min="1" max="7">
+  </div>
+  <button onclick="call('r5','POST','/api/regions/recommendations',{preferenceTags:list('recTags'),companionType:val('recComp'),nights:num('recNights')})">실행</button>
+  <pre id="r5">—</pre>
+</div>
+
+<h2>3. 체류형 일정 <span style="font-size:11px;color:var(--dim)">— TourAPI 필요</span></h2>
+
+<div class="card">
+  <div class="head"><span class="m POST">POST</span><span class="path">/api/itineraries</span><span class="lock">🔒</span></div>
+  <div class="desc">
+    선택 지역·시작일·숙박일 기준으로 일정을 자동 생성한다. <b>TourAPI를 실시간 호출</b>하므로
+    인증키가 없거나 네트워크가 막히면 500이 난다. 성공하면 아래 입력칸들에 itineraryId가 자동으로 채워진다.
+  </div>
+  <div class="row">
+    <label>regionId</label><select id="itRegion"></select>
+    <label>startDate</label><input type="text" id="itStart" value="">
+    <label>nights</label><input type="number" id="itNights" value="2" min="1" max="7">
+  </div>
+  <div class="row">
+    <label>preferenceTags</label><input type="text" id="itTags" value="FOOD,HISTORY">
+    <label>companionType</label>
+    <select id="itComp"><option>SOLO</option><option>COUPLE</option><option selected>FRIENDS</option><option>FAMILY</option></select>
+  </div>
+  <button onclick="createItinerary()">실행</button>
+  <pre id="r6">—</pre>
+</div>
+
+<div class="card">
+  <div class="head"><span class="m GET">GET</span><span class="path">/api/itineraries/{id}</span><span class="lock">🔒</span></div>
+  <div class="desc">일정 상세. 일자별 날씨와 장소(관광지·음식점·체험·축제)를 함께 준다.</div>
+  <div class="row"><label>itineraryId</label><input type="number" id="itId" value=""></div>
+  <button onclick="call('r7','GET','/api/itineraries/'+val('itId'))">실행</button>
+  <pre id="r7">—</pre>
+</div>
+
+<div class="card">
+  <div class="head"><span class="m GET">GET</span><span class="path">/api/itineraries/{id}/weather</span><span class="lock">🔒</span></div>
+  <div class="desc">
+    일자별 날씨. 기상청 API허브 단기예보 기준 <b>오늘~+3일</b>만 값이 오고, 그 밖의 날짜는
+    <code>available: false</code>다. 인증키 미승인·호출 실패도 available=false로 나간다(에러 아님).
+  </div>
+  <div class="row"><label>itineraryId</label><input type="number" id="wId" value=""></div>
+  <button onclick="call('r8','GET','/api/itineraries/'+val('wId')+'/weather')">실행</button>
+  <pre id="r8">—</pre>
+</div>
+
+<div class="card">
+  <div class="head"><span class="m POST">POST</span><span class="path">/api/itineraries/{id}/regenerate</span><span class="lock">🔒</span></div>
+  <div class="desc">같은 조건으로 방문 장소를 다시 추천한다. 완료된 일정은 409.</div>
+  <div class="row">
+    <label>itineraryId</label><input type="number" id="rgId" value="">
+    <label>이전 제외</label><input type="checkbox" id="rgExclude">
+  </div>
+  <button onclick="call('r9','POST','/api/itineraries/'+val('rgId')+'/regenerate',{excludePreviouslyRecommended:chk('rgExclude')})">실행</button>
+  <pre id="r9">—</pre>
+</div>
+
+<div class="card">
+  <div class="head"><span class="m POST">POST</span><span class="path">/api/itineraries/{id}/items/{itemId}/replace</span><span class="lock">🔒</span></div>
+  <div class="desc">개별 장소 교체. 축제 항목은 개최 기간이 고정이라 교체 대상에서 제외된다(409).</div>
+  <div class="row">
+    <label>itineraryId</label><input type="number" id="rpId" value="">
+    <label>itemId</label><input type="number" id="rpItem" value="">
+  </div>
+  <button onclick="call('r10','POST','/api/itineraries/'+val('rpId')+'/items/'+val('rpItem')+'/replace',{excludePreviouslyRecommended:false})">실행</button>
+  <pre id="r10">—</pre>
+</div>
+
+<div class="card">
+  <div class="head">
+    <span class="m PUT">PUT</span><span class="m DELETE">DELETE</span>
+    <span class="path">/api/itineraries/{id}/bookmark</span><span class="lock">🔒</span>
+  </div>
+  <div class="desc">일정 저장 / 저장 해제. 중복 요청에도 동일 결과다. 저장한 일정은 마이페이지 저장 목록에 뜬다.</div>
+  <div class="row"><label>itineraryId</label><input type="number" id="bmId" value=""></div>
+  <button onclick="call('r11','PUT','/api/itineraries/'+val('bmId')+'/bookmark')">저장</button>
+  <button class="ghost" onclick="call('r11','DELETE','/api/itineraries/'+val('bmId')+'/bookmark')">저장 해제</button>
+  <pre id="r11">—</pre>
+</div>
+
+<div class="card">
+  <div class="head"><span class="m POST">POST</span><span class="path">/api/itineraries/{id}/completion</span><span class="lock">🔒</span></div>
+  <div class="desc">
+    여행 완료 등록. <b>TourAPI를 호출하지 않으므로 일정 행만 있으면 동작한다.</b>
+    스탬프를 지급하고 지역 기여도를 산출해 저장한다.
+    응답의 <code>contribution.calculationStatus</code>가 <b>CALCULATED</b>여야 정상이다.
+    같은 일정을 두 번 완료하면 409.
+    <br>산입 일수 = 24시간마다 1일 + 나머지 3시간 이상이면 +1일 · 예상 소비 = 66,000원 × 인원 × 산입일수
+  </div>
+  <div class="row">
+    <label>itineraryId</label><input type="number" id="cpId" value="">
+    <label>stayHours</label><input type="number" id="cpHours" value="50" min="1" max="192">
+    <label>partySize</label><input type="number" id="cpParty" value="2" min="1">
+    <label>totalSpent</label><input type="number" id="cpSpent" value="320000" min="0">
+  </div>
+  <button onclick="call('r12','POST','/api/itineraries/'+val('cpId')+'/completion',{stayHours:num('cpHours'),partySize:num('cpParty'),totalSpent:num('cpSpent')})">실행</button>
+  <pre id="r12">—</pre>
+</div>
+
+<h2>4. 마이페이지</h2>
+
+<div class="card">
+  <div class="head"><span class="m GET">GET</span><span class="path">/api/users/me/completed-trips</span><span class="lock">🔒</span></div>
+  <div class="desc">완료 여행 목록. <code>regionId</code>를 주면 해당 지역만. 데이터가 없는 지역은 에러가 아니라 빈 배열이다.</div>
+  <div class="row"><label>regionId (선택)</label><input type="text" id="ctRegion" placeholder="비우면 전체"></div>
+  <button onclick="call('r13','GET','/api/users/me/completed-trips'+(val('ctRegion')?('?regionId='+val('ctRegion')):''))">실행</button>
+  <pre id="r13">—</pre>
+</div>
+
+<div class="card">
+  <div class="head"><span class="m GET">GET</span><span class="path">/api/users/me/completed-trips/{completedTripId}</span><span class="lock">🔒</span></div>
+  <div class="desc">
+    완료 여행·기여도 상세. 기여도 스냅샷과 해당 지역 스탬프를 함께 준다.
+    지출은 두 가지 — <code>reportedSpending</code>(사용자 입력한 실제 지출),
+    <code>estimatedSpending</code>(국민여행조사 단가 기반 추정).
+    남의 기록은 403, 없는 기록은 404.
+  </div>
+  <div class="row"><label>completedTripId</label><input type="number" id="ctId" value="1"></div>
+  <button onclick="call('r14','GET','/api/users/me/completed-trips/'+val('ctId'))">실행</button>
+  <pre id="r14">—</pre>
+</div>
+
+<div class="card">
+  <div class="head"><span class="m GET">GET</span><span class="path">/api/users/me/stamps</span><span class="lock">🔒</span></div>
+  <div class="desc">
+    스탬프 현황. <b>미수집 지역까지 15개 전체</b>를 <code>collected:false</code>로 함께 내려주므로
+    프론트는 배지 그리드를 그대로 렌더링하면 된다.
+  </div>
+  <button onclick="call('r15','GET','/api/users/me/stamps')">실행</button>
+  <pre id="r15">—</pre>
+</div>
+
+<div class="card">
+  <div class="head"><span class="m GET">GET</span><span class="path">/api/users/me/contribution-summary</span><span class="lock">🔒</span></div>
+  <div class="desc">
+    기여도 요약. 전체 누계와 지역별 누계를 함께 준다.
+    제안서의 지표 4종이 각각 <code>visitedRegionCount</code> / <code>totalStayHours</code> /
+    <code>totalEstimatedSpending</code> / <code>totalPopulationContributionDays</code>에 대응한다.
+    <b>합계가 위 완료 여행 목록의 값을 더한 것과 일치해야 한다.</b>
+  </div>
+  <button onclick="call('r16','GET','/api/users/me/contribution-summary')">실행</button>
+  <pre id="r16">—</pre>
+</div>
+
+<div class="card">
+  <div class="head"><span class="m GET">GET</span><span class="path">/api/users/me/bookmarked-itineraries</span><span class="lock">🔒</span></div>
+  <div class="desc">저장(책갈피)한 일정 목록. 최근 저장순.</div>
+  <button onclick="call('r17','GET','/api/users/me/bookmarked-itineraries')">실행</button>
+  <pre id="r17">—</pre>
+</div>
+
+<h2>5. 권한·에러 확인</h2>
+
+<div class="card">
+  <div class="desc">
+    토큰 없이 호출하면 <b>401</b>이어야 한다. 302 리다이렉트가 오면 SecurityConfig 문제다.
+    없는 기록은 404 <code>COMPLETED_TRIP_NOT_FOUND</code>, 남의 기록은 403 <code>COMPLETED_TRIP_ACCESS_DENIED</code>.
+  </div>
+  <button onclick="call('r18','GET','/api/users/me/stamps',null,false)">토큰 없이 호출 → 401 기대</button>
+  <button class="ghost" onclick="call('r18','GET','/api/users/me/completed-trips/999999')">없는 ID → 404 기대</button>
+  <pre id="r18">—</pre>
+</div>
+
+</main>
+
+<script>
+const REGIONS = ['안동','영주','문경','상주','봉화','영양','청송','의성','청도','예천','울진','영덕','고령','성주','울릉'];
+const TAGS = ['HANOK_CONFUCIANISM','NATURE','SEA','WALKING','HEALING','FOOD','BICYCLE','HISTORY','NIGHT_SKY'];
+
+const $ = id => document.getElementById(id);
+const val = id => $(id).value.trim();
+const num = id => Number($(id).value);
+const chk = id => $(id).checked;
+const enc = id => encodeURIComponent(val(id));
+const list = id => val(id).split(',').map(s => s.trim()).filter(Boolean);
+
+function base(){ return val('base').replace(/\/+$/,''); }
+function token(){ return val('token'); }
+
+function kakao(){ window.open(base() + '/oauth2/authorization/kakao', '_blank'); }
+function clearToken(){ $('token').value=''; $('who').textContent=''; save(); }
+
+function save(){ try{ localStorage.setItem('mk_base', base()); localStorage.setItem('mk_token', token()); }catch(e){} }
+function load(){
+  try{
+    const b = localStorage.getItem('mk_base'); if(b) $('base').value = b;
+    const t = localStorage.getItem('mk_token'); if(t) $('token').value = t;
+  }catch(e){}
+  const q = new URLSearchParams(location.search).get('accessToken');
+  if(q){ $('token').value = q; save(); }
+}
+
+async function call(target, method, path, body, auth = true){
+  const box = $(target);
+  box.textContent = '요청 중...';
+  const headers = {};
+  if(auth && token()) headers['Authorization'] = 'Bearer ' + token();
+  if(body) headers['Content-Type'] = 'application/json';
+  save();
+  const started = performance.now();
+  try{
+    const res = await fetch(base() + path, {
+      method, headers, body: body ? JSON.stringify(body) : undefined, redirect:'manual'
+    });
+    const ms = Math.round(performance.now() - started);
+    const text = await res.text();
+    let shown = text;
+    try{ shown = JSON.stringify(JSON.parse(text), null, 2); }catch(e){}
+    const cls = res.status >= 500 ? 's5' : res.status >= 400 ? 's4' : 's2';
+    const status = res.type === 'opaqueredirect' ? '302 (리다이렉트 — 401이어야 정상)' : res.status + ' ' + res.statusText;
+    box.innerHTML = '<span class="st ' + cls + '">' + status + '</span>'
+                  + '<span style="color:var(--dim)">' + method + ' ' + path + ' · ' + ms + 'ms</span>\n\n'
+                  + escapeHtml(shown || '(본문 없음)');
+    return { status: res.status, text };
+  }catch(err){
+    box.innerHTML = '<span class="st s5">요청 실패</span>\n\n' + escapeHtml(String(err))
+      + '\n\n서버가 안 떠 있거나 CORS에 막혔을 수 있다.'
+      + '\n이 페이지를 file:// 이 아니라 http://localhost:5173 으로 열었는지 확인할 것.';
+    return null;
+  }
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+async function me(){
+  const r = await call('r1','GET','/api/users/me');
+  if(r && r.status === 200){
+    try{ const u = JSON.parse(r.text);
+      $('who').textContent = 'userId ' + u.id + ' · ' + (u.nickname || '(닉네임 없음)');
+    }catch(e){}
+  }
+}
+
+async function createItinerary(){
+  const r = await call('r6','POST','/api/itineraries',{
+    regionId: num('itRegion'), startDate: val('itStart'), nights: num('itNights'),
+    preferenceTags: list('itTags'), companionType: val('itComp')
+  });
+  if(r && r.status === 201){
+    try{
+      const it = JSON.parse(r.text);
+      ['itId','wId','rgId','rpId','bmId','cpId'].forEach(id => $(id).value = it.itineraryId);
+      const first = (it.days?.[0]?.items || []).find(i => i.replaceable);
+      if(first) $('rpItem').value = first.itemId;
+    }catch(e){}
+  }
+}
+
+(function init(){
+  REGIONS.forEach((name, i) => {
+    const o = document.createElement('option');
+    o.value = i + 1; o.textContent = (i + 1) + '. ' + name;
+    $('itRegion').appendChild(o);
+  });
+  TAGS.forEach(t => {
+    const s = document.createElement('span');
+    s.className = 'tag'; s.textContent = t;
+    s.onclick = () => { const cur = list('recTags'); if(!cur.includes(t) && cur.length < 3){ cur.push(t); $('recTags').value = cur.join(','); } };
+    $('tagList').appendChild(s);
+  });
+  const d = new Date(); d.setDate(d.getDate() + 1);
+  $('itStart').value = d.toISOString().slice(0,10);
+  load();
+})();
+</script>
+</body>
+</html>
