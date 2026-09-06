@@ -1,1 +1,0 @@
-package com.travel.meomulkyung.itinerary.external; import com.travel.meomulkyung.region.domain.Region; import java.time.LocalDate; public interface WeatherProvider { Weather weather(Region region,LocalDate date); record Weather(boolean available,String icon,Integer temperature,Integer minimumTemperature,Integer maximumTemperature){} }

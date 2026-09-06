@@ -1,3 +1,0 @@
-package com.travel.meomulkyung.itinerary.dto;
-import com.travel.meomulkyung.recommendation.domain.*; import jakarta.validation.constraints.*; import java.time.LocalDate; import java.util.*;
-public final class ItineraryRequests { private ItineraryRequests(){} public record Create(@NotNull Long regionId,@NotNull LocalDate startDate,@Min(1) @Max(7) int nights,@NotEmpty @Size(max=3) List<PreferenceTag> preferenceTags,@NotNull CompanionType companionType){public boolean duplicate(){return preferenceTags!=null&&preferenceTags.stream().distinct().count()!=preferenceTags.size();}} public record Replace(boolean excludePreviouslyRecommended){} public record Completion(@Min(1) @Max(192) int stayHours,@Min(1) int partySize,@Min(0) long totalSpent){} }

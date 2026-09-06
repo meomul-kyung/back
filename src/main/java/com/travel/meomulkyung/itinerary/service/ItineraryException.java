@@ -1,1 +1,0 @@
-package com.travel.meomulkyung.itinerary.service; import org.springframework.http.HttpStatus; public class ItineraryException extends RuntimeException { public final HttpStatus status; public final String code; public ItineraryException(HttpStatus s,String c,String m){super(m);status=s;code=c;} }
