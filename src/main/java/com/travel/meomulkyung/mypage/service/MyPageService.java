@@ -180,7 +180,7 @@ public class MyPageService {
                     trip.getEstimatedSpending(),
                     trip.getContributionPolicyVersion());
         }
-        return contributionPolicy.calculate(trip.getItinerary().getNights() + 1, trip.getStayHours(), trip.getPartySize());
+        return contributionPolicy.calculate(trip.getStayHours(), trip.getPartySize());
     }
 
     private MyPageResponses.CompletedTripSummary toSummary(CompletedTrip trip) {

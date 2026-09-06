@@ -208,8 +208,8 @@ class MyPageControllerTest {
         assertThat(summary.get("completedTripCount").asInt()).isEqualTo(2);
         assertThat(summary.get("totalStayHours").asInt()).isEqualTo(expectedStayHours).isEqualTo(74);
         assertThat(summary.get("totalReportedSpending").asLong()).isEqualTo(321_000L);
-        assertThat(summary.get("totalEstimatedSpending").asLong()).isEqualTo(expectedSpending).isEqualTo(396_000L);
-        assertThat(summary.get("totalPopulationContributionDays").asInt()).isEqualTo(expectedDays).isEqualTo(4);
+        assertThat(summary.get("totalEstimatedSpending").asLong()).isEqualTo(expectedSpending).isEqualTo(330_000L);
+        assertThat(summary.get("totalPopulationContributionDays").asInt()).isEqualTo(expectedDays).isEqualTo(3);
         assertThat(summary.get("policyVersion").asText()).isEqualTo(POLICY_VERSION);
 
         // 지역별 누계 합도 전체 누계와 일치해야 한다
@@ -237,8 +237,8 @@ class MyPageControllerTest {
         assertThat(region.get("tripCount").asInt()).isEqualTo(2);
         assertThat(region.get("stayHours").asInt()).isEqualTo(51);
         // 24시간 1인 → 1일, 27시간 2인 → 2일
-        assertThat(region.get("populationContributionDays").asInt()).isEqualTo(4);
-        assertThat(region.get("estimatedSpending").asLong()).isEqualTo(DAILY_SPENDING * 1 * 2 + DAILY_SPENDING * 2 * 2);
+        assertThat(region.get("populationContributionDays").asInt()).isEqualTo(3);
+        assertThat(region.get("estimatedSpending").asLong()).isEqualTo(DAILY_SPENDING * 1 * 1 + DAILY_SPENDING * 2 * 2);
     }
 
     @Test
