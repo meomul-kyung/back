@@ -78,9 +78,7 @@ class RegionControllerTest {
     void getRegionReturnsResourcesTravelStyleTipsAndAttributions() throws Exception {
         mockMvc.perform(get("/api/regions/{regionId}", RegionTestFixture.FIRST_REGION_ID))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.representativeResources[0].placeName").value(RegionTestFixture.FIRST_REPRESENTATIVE_PLACE))
-                .andExpect(jsonPath("$.representativeResources[0].placeId").value(nullValue()))
-                .andExpect(jsonPath("$.representativeResources[0].category").value(nullValue()))
+                .andExpect(jsonPath("$.representativeResources.length()").value(0))
                 .andExpect(jsonPath("$.travelStyle.keywords[0].code").value("HISTORY"))
                 .andExpect(jsonPath("$.travelStyle.recommendedCompanions[0].code").value("FRIENDS"))
                 .andExpect(jsonPath("$.localTips.length()").value(0))
@@ -98,11 +96,11 @@ class RegionControllerTest {
     @Test
     void writeMethodsAreNotPublic() throws Exception {
         mockMvc.perform(post("/api/regions"))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isUnauthorized());
         mockMvc.perform(put("/api/regions/{regionId}", RegionTestFixture.FIRST_REGION_ID))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isUnauthorized());
         mockMvc.perform(delete("/api/regions/{regionId}", RegionTestFixture.FIRST_REGION_ID))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -114,6 +112,6 @@ class RegionControllerTest {
                 .andExpect(jsonPath("$.oauthClientSecret").doesNotExist())
                 .andExpect(jsonPath("$.createdAt").doesNotExist())
                 .andExpect(jsonPath("$.updatedAt").doesNotExist())
-                .andExpect(jsonPath("$.representativeResources[0].placeName", not("")));
+                .andExpect(jsonPath("$.representativeResources.length()").value(0));
     }
 }

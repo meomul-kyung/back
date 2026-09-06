@@ -18,6 +18,7 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
@@ -33,20 +34,19 @@ public class Region {
     @Id
     @Column(name = "region_id")
     private Long id;
-
     @Column(nullable = false, unique = true, length = 100)
     private String name;
-
-    @Column(name = "thumbnail_url", length = 1000)
-    private String thumbnailUrl;
-
-    @Column(name = "hero_image_url", length = 1000)
-    private String heroImageUrl;
-
+    @Column(name = "ldong_regn_cd", length = 10)
+    private String ldongRegnCd;
+    @Column(name = "ldong_signgu_cd", length = 10)
+    private String ldongSignguCd;
     @Column(name = "identity_statement", nullable = false, length = 500)
     private String identityStatement;
-
-    @Column(nullable = false, length = 1000)
+    @Column(name = "thumbnail_url", length = 1000)
+    private String thumbnailUrl;
+    @Column(name = "hero_image_url", length = 1000)
+    private String heroImageUrl;
+    @Column(length = 1000)
     private String description;
 
     @ElementCollection(fetch = FetchType.LAZY)
@@ -55,48 +55,54 @@ public class Region {
     @Column(name = "tag_code", nullable = false, length = 50)
     @OrderColumn(name = "display_order")
     private List<PreferenceTag> representativeTags = new ArrayList<>();
-
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "region_recommended_companions", joinColumns = @JoinColumn(name = "region_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "companion_code", nullable = false, length = 50)
     @OrderColumn(name = "display_order")
     private List<CompanionType> recommendedCompanions = new ArrayList<>();
-
+    @OneToMany(mappedBy = "region")
+    private List<RegionTagScore> regionTagScores = new ArrayList<>();
     @OneToMany(mappedBy = "region", fetch = FetchType.LAZY)
     @OrderBy("displayOrder ASC")
     private List<RepresentativeResource> representativeResources = new ArrayList<>();
-
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "region_local_tips", joinColumns = @JoinColumn(name = "region_id"))
     @Column(name = "tip", nullable = false, length = 1000)
     @OrderColumn(name = "display_order")
     private List<String> localTips = new ArrayList<>();
-
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "region_source_attributions", joinColumns = @JoinColumn(name = "region_id"))
     @Column(name = "source_name", nullable = false, length = 200)
     @OrderColumn(name = "display_order")
     private List<String> sourceAttributions = new ArrayList<>();
-
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    public Region(Long id, String name, String thumbnailUrl, String heroImageUrl, String identityStatement,
-                  String description, List<PreferenceTag> representativeTags,
+    public Region(Long id, String name, String ldongRegnCd, String ldongSignguCd, String identityStatement,
+                  String thumbnailUrl, String heroImageUrl, String description, List<PreferenceTag> representativeTags,
                   List<CompanionType> recommendedCompanions) {
         this.id = id;
         this.name = name;
+        this.ldongRegnCd = ldongRegnCd;
+        this.ldongSignguCd = ldongSignguCd;
+        this.identityStatement = identityStatement;
         this.thumbnailUrl = thumbnailUrl;
         this.heroImageUrl = heroImageUrl;
-        this.identityStatement = identityStatement;
         this.description = description;
         this.representativeTags = new ArrayList<>(representativeTags);
         this.recommendedCompanions = new ArrayList<>(recommendedCompanions);
     }
 
-    public void addRepresentativeResource(RepresentativeResource resource) {
-        representativeResources.add(resource);
+    public Region(Long id, String name, String ldongRegnCd, String ldongSignguCd, String identityStatement,
+                  String thumbnailUrl) {
+        this(id, name, ldongRegnCd, ldongSignguCd, identityStatement, thumbnailUrl, null, null, List.of(), List.of());
     }
+
+    public void addRegionTagScore(RegionTagScore regionTagScore) { regionTagScores.add(regionTagScore); }
+    public void addRepresentativeResource(RepresentativeResource resource) { representativeResources.add(resource); }
 }
