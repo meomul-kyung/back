@@ -38,3 +38,6 @@ out/
 
 ### env File ###
 .env
+
+### local API test console (not for repo) ###
+/test/
