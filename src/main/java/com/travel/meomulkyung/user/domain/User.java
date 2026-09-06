@@ -52,10 +52,6 @@ public class User {
     @Column(length = 500)
     private String profileImageUrl;
 
-    /** 사용자 지정 닉네임 (온보딩 시 등록, 서비스 내 표시명). 등록 전엔 null. */
-    @Column(unique = true, length = 30)
-    private String nickname;
-
     /** 'kakao' | 'google' | 'naver' */
     @Column(nullable = false, length = 20)
     private String provider;
@@ -97,15 +93,5 @@ public class User {
         if (email != null) {
             this.email = email;
         }
-    }
-
-    /** 온보딩/개인정보 수정 시 닉네임 등록·변경 */
-    public void updateNickname(String nickname) {
-        this.nickname = nickname;
-    }
-
-    /** 온보딩 완료 여부는 닉네임 등록 여부로 파생한다(별도 플래그 없음). */
-    public boolean isOnboardingCompleted() {
-        return this.nickname != null;
     }
 }

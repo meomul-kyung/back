@@ -1,3 +1,0 @@
-package com.travel.meomulkyung.itinerary;
-import com.travel.meomulkyung.region.domain.Region; import com.travel.meomulkyung.user.domain.*; import java.util.concurrent.atomic.AtomicLong;
-public final class ItineraryTestFixture {private static final AtomicLong IDS=new AtomicLong(100);private ItineraryTestFixture(){} public static User user(){long id=IDS.incrementAndGet();return User.builder().email("test"+id+"@example.test").name("tester").provider("test").providerId("provider-"+id).role(Role.USER).build();} public static Region region(){return new Region(1L,"Test region",null,null,"identity",null);}}

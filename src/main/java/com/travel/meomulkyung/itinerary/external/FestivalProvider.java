@@ -1,1 +1,0 @@
-package com.travel.meomulkyung.itinerary.external; import com.travel.meomulkyung.region.domain.Region; import java.time.LocalDate; import java.util.*; public interface FestivalProvider { List<Festival> findFestivals(Region region,LocalDate start,LocalDate end); record Festival(Long contentId,String title,LocalDate startDate,LocalDate endDate,String imageUrl,String address){} }

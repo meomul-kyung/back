@@ -40,7 +40,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         log.info("[OAuth2 로그인 성공] userId={}, provider={}, email={}",
                 user.getId(), user.getProvider(), user.getEmail());
-        log.debug("OAuth2 access token issued successfully");
+        // 개발 편의용 토큰 로깅 — 운영 배포 전 반드시 제거/레벨조정
+        log.debug("[OAuth2 발급 토큰(dev)] {}", accessToken);
 
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
                 .queryParam("accessToken", accessToken)

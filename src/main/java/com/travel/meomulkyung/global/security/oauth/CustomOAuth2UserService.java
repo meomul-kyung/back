@@ -34,7 +34,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         Map<String, Object> attributes = oAuth2User.getAttributes();
 
         // NPE 디버깅용: 제공자가 실제로 내려준 원본 구조 확인
-        log.debug("OAuth2 user attributes received for registrationId={}", registrationId);
+        log.debug("[OAuth2] registrationId={}, raw attributes={}", registrationId, attributes);
 
         OAuth2UserInfo info = OAuth2UserInfoFactory.of(registrationId, attributes);
         if (info.getProviderId() == null) {

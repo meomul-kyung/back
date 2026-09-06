@@ -1,1 +1,0 @@
-package com.travel.meomulkyung.itinerary.repository; import com.travel.meomulkyung.itinerary.domain.UserStamp; import org.springframework.data.jpa.repository.JpaRepository; import java.util.Optional; public interface UserStampRepository extends JpaRepository<UserStamp,Long>{Optional<UserStamp> findByUserIdAndRegionId(Long userId,Long regionId);}
