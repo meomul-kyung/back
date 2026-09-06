@@ -48,7 +48,7 @@ public class JwtTokenProvider {
             parse(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
-            log.debug("유효하지 않은 JWT: {}", e.getMessage());
+            log.debug("JWT validation failed");
             return false;
         }
     }

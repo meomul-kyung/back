@@ -1,0 +1,1 @@
+package com.travel.meomulkyung.itinerary.repository; import com.travel.meomulkyung.itinerary.domain.CompletedTrip; import org.springframework.data.jpa.repository.JpaRepository; public interface CompletedTripRepository extends JpaRepository<CompletedTrip,Long>{boolean existsByItineraryId(Long itineraryId);}
