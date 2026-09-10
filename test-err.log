@@ -1,0 +1,3 @@
+Note: C:\Users\a0900\IdeaProjects\meomul-kyung\src\main\java\com\travel\meomulkyung\itinerary\service\ItineraryService.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended

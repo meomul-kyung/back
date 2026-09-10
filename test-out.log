@@ -1,0 +1,49 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :clean
+
+> Task :compileJava
+
+> Task :processResources
+> Task :classes
+> Task :compileTestJava
+> Task :processTestResources NO-SOURCE
+> Task :testClasses
+> Task :test
+
+2026-09-11T00:44:44.556+09:00  INFO 9824 --- [meomul-kyung] [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+Hibernate: 
+    drop table if exists completed_trips cascade 
+Hibernate: 
+    drop table if exists itineraries cascade 
+Hibernate: 
+    drop table if exists itinerary_items cascade 
+Hibernate: 
+    drop table if exists itinerary_preference_tags cascade 
+Hibernate: 
+    drop table if exists region_tag_scores cascade 
+Hibernate: 
+    drop table if exists regions cascade 
+Hibernate: 
+    drop table if exists tags cascade 
+Hibernate: 
+    drop table if exists user_stamps cascade 
+Hibernate: 
+    drop table if exists users cascade 
+2026-09-11T00:44:44.570+09:00  INFO 9824 --- [meomul-kyung] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-09-11T00:44:44.575+09:00  INFO 9824 --- [meomul-kyung] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-09-11T00:44:44.581+09:00  INFO 9824 --- [meomul-kyung] [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-09-11T00:44:44.588+09:00  INFO 9824 --- [meomul-kyung] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown initiated...
+2026-09-11T00:44:44.589+09:00  INFO 9824 --- [meomul-kyung] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Shutdown completed.
+2026-09-11T00:44:44.590+09:00  INFO 9824 --- [meomul-kyung] [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-09-11T00:44:44.593+09:00  INFO 9824 --- [meomul-kyung] [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-09-11T00:44:44.597+09:00  INFO 9824 --- [meomul-kyung] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown initiated...
+2026-09-11T00:44:44.598+09:00  INFO 9824 --- [meomul-kyung] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Shutdown completed.
+2026-09-11T00:44:44.602+09:00  INFO 9824 --- [meomul-kyung] [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-09-11T00:44:44.603+09:00  INFO 9824 --- [meomul-kyung] [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+
+[Incubating] Problems report is available at: file:///C:/Users/a0900/IdeaProjects/meomul-kyung/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 1m 25s
+5 actionable tasks: 5 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.5.1/userguide/configuration_cache_enabling.html
