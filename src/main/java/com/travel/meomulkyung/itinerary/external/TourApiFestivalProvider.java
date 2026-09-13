@@ -20,6 +20,7 @@ import java.util.List;
 
 public class TourApiFestivalProvider implements FestivalProvider {
     private static final DateTimeFormatter TOUR_API_DATE = DateTimeFormatter.BASIC_ISO_DATE;
+    private static final String FESTIVAL_CONTENT_TYPE_ID = "15";
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
@@ -45,11 +46,11 @@ public class TourApiFestivalProvider implements FestivalProvider {
             String response = restClient.get().uri(requestUri(regionCode, start, end)).retrieve().body(String.class);
             return parseResponse(response);
         } catch (RestClientResponseException exception) {
-            throw new TourApiProviderException("TourAPI returned an HTTP error.");
+            throw TourApiProviderException.fromHttpError(exception);
         } catch (ResourceAccessException exception) {
-            throw new TourApiProviderException("TourAPI request failed.");
+            throw TourApiProviderException.fromResourceAccessError(exception);
         } catch (RestClientException exception) {
-            throw new TourApiProviderException("TourAPI request failed.");
+            throw TourApiProviderException.fromClientError(exception);
         }
     }
 
@@ -62,6 +63,7 @@ public class TourApiFestivalProvider implements FestivalProvider {
                 .queryParam("pageNo", 1)
                 .queryParam("numOfRows", properties.getPageSize())
                 .queryParam("areaCode", regionCode.getAreaCode())
+                .queryParam("contentTypeId", FESTIVAL_CONTENT_TYPE_ID)
                 .queryParam("eventStartDate", TOUR_API_DATE.format(start))
                 .queryParam("eventEndDate", TOUR_API_DATE.format(end))
                 .queryParamIfPresent("sigunguCode", StringUtils.hasText(regionCode.getSigunguCode())
@@ -94,7 +96,7 @@ public class TourApiFestivalProvider implements FestivalProvider {
             }
             return festivals;
         } catch (JsonProcessingException exception) {
-            throw new TourApiProviderException("TourAPI returned an invalid JSON response.");
+            throw new TourApiProviderException("TourAPI returned an invalid JSON response.", exception);
         }
     }
 

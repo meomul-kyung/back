@@ -13,7 +13,7 @@ public class TourApiProperties {
     private String mobileOs = "ETC";
     private String mobileApp = "meomul-kyung";
     private Duration connectTimeout = Duration.ofSeconds(2);
-    private Duration readTimeout = Duration.ofSeconds(5);
+    private Duration readTimeout = Duration.ofSeconds(15);
     private int pageSize = 50;
     private Map<Long, RegionCode> regionCodes = new HashMap<>();
 

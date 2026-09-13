@@ -1,5 +1,8 @@
 package com.travel.meomulkyung.itinerary.controller;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.travel.meomulkyung.global.security.SecurityConfig;
 import com.travel.meomulkyung.global.security.jwt.JwtAuthenticationFilter;
 import com.travel.meomulkyung.global.security.jwt.JwtTokenProvider;
@@ -10,6 +13,7 @@ import com.travel.meomulkyung.itinerary.ItineraryTestConfig;
 import com.travel.meomulkyung.itinerary.ItineraryTestFixture;
 import com.travel.meomulkyung.itinerary.domain.ItineraryItem;
 import com.travel.meomulkyung.itinerary.domain.ItineraryItemType;
+import com.travel.meomulkyung.itinerary.external.TourApiProviderException;
 import com.travel.meomulkyung.itinerary.repository.ItineraryRepository;
 import com.travel.meomulkyung.region.repository.RegionRepository;
 import com.travel.meomulkyung.user.repository.UserRepository;
@@ -18,6 +22,7 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -56,6 +61,7 @@ class ItineraryControllerTest {
  @Autowired RegionRepository regions;
  @Autowired ItineraryRepository itineraries;
  @Autowired ItineraryTestConfig.FakeFestivalProvider festivals;
+ @Autowired ItineraryTestConfig.FakeTourPlaceProvider places;
  @MockitoBean CustomOAuth2UserService customOAuth2UserService;
  @MockitoBean OAuth2SuccessHandler oAuth2SuccessHandler;
  @MockitoBean OAuth2FailureHandler oAuth2FailureHandler;
@@ -65,6 +71,7 @@ class ItineraryControllerTest {
  @BeforeEach void setUp() throws Exception {
   if (!regions.existsById(1L)) regions.save(ItineraryTestFixture.region());
   festivals.setFestivals(List.of());
+  places.reset();
   doAnswer(invocation -> {
    var request = (jakarta.servlet.http.HttpServletRequest) invocation.getArgument(0);
    SecurityContextHolder.clearContext();
@@ -80,6 +87,7 @@ class ItineraryControllerTest {
 
  @Test void createRequiresAuthentication() throws Exception { mockMvc.perform(post("/api/itineraries").contentType(MediaType.APPLICATION_JSON).content(validRequest(1))).andExpect(status().isUnauthorized()); }
  @Test void createReturnsExpectedItinerary() throws Exception { Long userId = user(); mockMvc.perform(post("/api/itineraries").header("Authorization", token(userId)).contentType(MediaType.APPLICATION_JSON).content(validRequest(1))).andExpect(status().isCreated()).andExpect(jsonPath("$.itineraryId").isNumber()).andExpect(jsonPath("$.status").value("DRAFT")).andExpect(jsonPath("$.bookmarked").value(false)).andExpect(jsonPath("$.region.regionId").value(1)).andExpect(jsonPath("$.startDate").value(START_DATE.toString())).andExpect(jsonPath("$.endDate").value(START_DATE.plusDays(1).toString())).andExpect(jsonPath("$.nights").value(1)).andExpect(jsonPath("$.generationVersion").value(1)).andExpect(jsonPath("$.days").isArray()).andExpect(jsonPath("$.warnings").isArray()); }
+ @Test void createReturnsServiceUnavailableWhenTourApiFails() throws Exception { Long userId=user(); places.fail(TourApiProviderException.fromResourceAccessError(new org.springframework.web.client.ResourceAccessException("test",new java.net.SocketTimeoutException()))); Logger logger=(Logger)LoggerFactory.getLogger(ItineraryExceptionHandler.class); ListAppender<ILoggingEvent> logs=new ListAppender<>(); logs.start(); logger.addAppender(logs); try { mockMvc.perform(post("/api/itineraries").header("Authorization",token(userId)).contentType(MediaType.APPLICATION_JSON).content(validRequest(1))).andExpect(status().isServiceUnavailable()).andExpect(jsonPath("$.status").value(503)).andExpect(jsonPath("$.code").value("TOUR_API_UNAVAILABLE")); org.assertj.core.api.Assertions.assertThat(logs.list).extracting(ILoggingEvent::getFormattedMessage).contains("tour_api_unavailable type=TIMEOUT causeClass=SocketTimeoutException httpStatus=null").noneMatch(message->message.contains("test-user-")||message.contains("simulated timeout")); } finally { logger.detachAppender(logs); logs.stop(); } }
  @Test void createRejectsInvalidNights() throws Exception { assertCreateError(requestWith("\"nights\":0"), "INVALID_NIGHTS"); assertCreateError(requestWith("\"nights\":8"), "INVALID_NIGHTS"); }
  @Test void createRejectsInvalidPreferenceTags() throws Exception { assertCreateError(requestWith("\"preferenceTags\":[]"), "INVALID_PREFERENCE_TAGS"); assertCreateError(requestWith("\"preferenceTags\":[\"FOOD\",\"NATURE\",\"SEA\",\"WALKING\"]"), "INVALID_PREFERENCE_TAGS"); }
  @Test void createRejectsUnsupportedCompanionType() throws Exception { assertCreateError(requestWith("\"companionType\":\"UNKNOWN\""), "INVALID_COMPANION_TYPE"); }
