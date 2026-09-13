@@ -15,6 +15,7 @@ public class TourApiProperties {
     private Duration connectTimeout = Duration.ofSeconds(2);
     private Duration readTimeout = Duration.ofSeconds(15);
     private int pageSize = 50;
+    private int maxPages = 10;
     private Map<Long, RegionCode> regionCodes = new HashMap<>();
 
     public String getBaseUrl() { return baseUrl; }
@@ -31,6 +32,8 @@ public class TourApiProperties {
     public void setReadTimeout(Duration readTimeout) { this.readTimeout = readTimeout; }
     public int getPageSize() { return pageSize; }
     public void setPageSize(int pageSize) { this.pageSize = pageSize; }
+    public int getMaxPages() { return maxPages; }
+    public void setMaxPages(int maxPages) { this.maxPages = maxPages; }
     public Map<Long, RegionCode> getRegionCodes() { return regionCodes; }
     public void setRegionCodes(Map<Long, RegionCode> regionCodes) { this.regionCodes = regionCodes; }
 

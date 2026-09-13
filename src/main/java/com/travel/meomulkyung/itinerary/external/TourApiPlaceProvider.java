@@ -14,7 +14,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class TourApiPlaceProvider implements TourPlaceProvider {
@@ -32,6 +34,36 @@ public class TourApiPlaceProvider implements TourPlaceProvider {
 
     @Override
     public List<Place> findPlaces(Region region) {
+        return find(region, null);
+    }
+
+    @Override
+    public List<Place> findAttractions(Region region) {
+        return findByContentTypes(region, List.of("12", "14", "28", "38"));
+    }
+
+    @Override
+    public List<Place> findRestaurants(Region region) {
+        return findByContentTypes(region, List.of("39"));
+    }
+
+    private List<Place> findByContentTypes(Region region, List<String> contentTypeIds) {
+        Map<Long, Place> unique = new LinkedHashMap<>();
+        for (String contentTypeId : contentTypeIds) {
+            for (int pageNo = 1; pageNo <= properties.getMaxPages(); pageNo++) {
+                List<Place> page = find(region, contentTypeId, pageNo);
+                page.forEach(place -> unique.putIfAbsent(place.contentId(), place));
+                if (page.size() < properties.getPageSize()) break;
+            }
+        }
+        return List.copyOf(unique.values());
+    }
+
+    private List<Place> find(Region region, String contentTypeId) {
+        return find(region, contentTypeId, 1);
+    }
+
+    private List<Place> find(Region region, String contentTypeId, int pageNo) {
         TourApiProperties.RegionCode regionCode = properties.getRegionCodes().get(region.getId());
         if (regionCode == null || !StringUtils.hasText(regionCode.getAreaCode())) {
             throw new TourApiProviderException("TourAPI region mapping is missing.");
@@ -41,7 +73,7 @@ public class TourApiPlaceProvider implements TourPlaceProvider {
         }
 
         try {
-            String response = restClient.get().uri(requestUri(regionCode)).retrieve().body(String.class);
+            String response = restClient.get().uri(requestUri(regionCode, contentTypeId, pageNo)).retrieve().body(String.class);
             return parseResponse(response);
         } catch (RestClientResponseException exception) {
             throw TourApiProviderException.fromHttpError(exception);
@@ -52,15 +84,17 @@ public class TourApiPlaceProvider implements TourPlaceProvider {
         }
     }
 
-    private URI requestUri(TourApiProperties.RegionCode regionCode) {
+    private URI requestUri(TourApiProperties.RegionCode regionCode, String contentTypeId, int pageNo) {
         String uri = UriComponentsBuilder.fromUriString(properties.getBaseUrl())
                 .pathSegment("areaBasedList2")
                 .queryParam("MobileOS", properties.getMobileOs())
                 .queryParam("MobileApp", properties.getMobileApp())
                 .queryParam("_type", "json")
-                .queryParam("pageNo", 1)
+                .queryParam("pageNo", pageNo)
                 .queryParam("numOfRows", properties.getPageSize())
                 .queryParam("areaCode", regionCode.getAreaCode())
+                .queryParamIfPresent("contentTypeId", StringUtils.hasText(contentTypeId)
+                        ? java.util.Optional.of(contentTypeId) : java.util.Optional.empty())
                 .queryParamIfPresent("sigunguCode", StringUtils.hasText(regionCode.getSigunguCode())
                         ? java.util.Optional.of(regionCode.getSigunguCode()) : java.util.Optional.empty())
                 .build()

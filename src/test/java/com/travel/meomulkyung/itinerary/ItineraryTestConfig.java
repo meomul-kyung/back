@@ -29,9 +29,10 @@ public class ItineraryTestConfig {
   @Override public List<Festival> findFestivals(Region region,LocalDate start,LocalDate end){if(failure!=null)throw failure;return festivals;}
  }
  public static class FakeTourPlaceProvider implements TourPlaceProvider {
-  private RuntimeException failure;
+  private RuntimeException failure; private List<Place> candidates;
   public void fail(RuntimeException exception){failure=exception;}
-  public void reset(){failure=null;}
-  @Override public List<Place> findPlaces(Region region){if(failure!=null)throw failure;return List.of(new Place(1L,"A",ItineraryItemType.TOURIST_SPOT,null,null,null,null),new Place(2L,"B",ItineraryItemType.TOURIST_SPOT,null,null,null,null),new Place(3L,"C",ItineraryItemType.RESTAURANT,null,null,null,null),new Place(4L,"D",ItineraryItemType.EXPERIENCE,null,null,null,null),new Place(5L,"E",ItineraryItemType.TOURIST_SPOT,null,null,null,null),new Place(6L,"F",ItineraryItemType.TOURIST_SPOT,null,null,null,null),new Place(7L,"G",ItineraryItemType.TOURIST_SPOT,null,null,null,null),new Place(8L,"H",ItineraryItemType.TOURIST_SPOT,null,null,null,null),new Place(9L,"I",ItineraryItemType.TOURIST_SPOT,null,null,null,null));}
+  public void reset(){failure=null;candidates=null;}
+  public void setCandidates(List<Place> candidates){this.candidates=candidates;}
+  @Override public List<Place> findPlaces(Region region){if(failure!=null)throw failure;if(candidates!=null)return candidates;List<Place> result=new java.util.ArrayList<>();for(long id=1;id<=30;id++)result.add(new Place(id,"Attraction "+id,id%4==0?ItineraryItemType.EXPERIENCE:ItineraryItemType.TOURIST_SPOT,"https://image.example/"+id,"Address "+id,null,null));for(long id=101;id<=120;id++)result.add(new Place(id,"Restaurant "+id,ItineraryItemType.RESTAURANT,"https://image.example/"+id,"Address "+id,null,null));return result;}
  }
 }
