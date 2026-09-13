@@ -79,8 +79,8 @@ class TourApiFestivalProviderTest {
         testProvider.server.expect(request -> {
             assertThat(request.getURI().getPath()).isEqualTo("/KorService2/searchFestival2");
             String query = request.getURI().getRawQuery();
-            assertThat(query).contains("eventStartDate=20260910", "eventEndDate=20260912", "areaCode=1", "sigunguCode=2",
-                            "MobileOS=ETC", "MobileApp=meomul-kyung", "_type=json", "pageNo=1", "numOfRows=50",
+            assertThat(query).contains("MobileOS=ETC", "MobileApp=meomul-kyung", "_type=json", "pageNo=1", "numOfRows=50",
+                            "areaCode=1", "sigunguCode=2", "contentTypeId=15", "eventStartDate=20260910", "eventEndDate=20260912",
                             "serviceKey=" + ENCODED_SERVICE_KEY)
                     .doesNotContain("%252F");
         }).andRespond(withSuccess(emptyItemsJson(), MediaType.APPLICATION_JSON));
@@ -132,7 +132,8 @@ class TourApiFestivalProviderTest {
 
         assertThatThrownBy(() -> testProvider.provider.findFestivals(region(), START, END))
                 .isInstanceOf(TourApiProviderException.class)
-                .hasMessage("TourAPI returned an HTTP error.")
+                .hasMessage("TourAPI returned HTTP status 500.")
+                .hasCauseInstanceOf(org.springframework.web.client.RestClientResponseException.class)
                 .hasMessageNotContaining(ENCODED_SERVICE_KEY);
     }
 
@@ -140,12 +141,29 @@ class TourApiFestivalProviderTest {
     void handlesCommunicationFailureWithoutLeakingTheServiceKey() {
         TestProvider testProvider = provider(ENCODED_SERVICE_KEY, "2");
         testProvider.server.expect(anything()).andRespond(request -> {
-            throw new ResourceAccessException("simulated timeout");
+            throw new ResourceAccessException("simulated timeout", new java.net.SocketTimeoutException("simulated timeout"));
         });
 
         assertThatThrownBy(() -> testProvider.provider.findFestivals(region(), START, END))
                 .isInstanceOf(TourApiProviderException.class)
-                .hasMessage("TourAPI request failed.")
+                .hasMessage("TourAPI request timed out (SocketTimeoutException).")
+                .hasCauseInstanceOf(ResourceAccessException.class)
+                .hasRootCauseInstanceOf(java.net.SocketTimeoutException.class)
+                .hasMessageNotContaining(ENCODED_SERVICE_KEY);
+    }
+
+    @Test
+    void classifiesConnectionFailureWithoutLeakingTheServiceKey() {
+        TestProvider testProvider = provider(ENCODED_SERVICE_KEY, "2");
+        testProvider.server.expect(anything()).andRespond(request -> {
+            throw new ResourceAccessException("simulated connection failure", new java.net.ConnectException("simulated connection failure"));
+        });
+
+        assertThatThrownBy(() -> testProvider.provider.findFestivals(region(), START, END))
+                .isInstanceOf(TourApiProviderException.class)
+                .hasMessage("TourAPI connection failed (ConnectException).")
+                .hasCauseInstanceOf(ResourceAccessException.class)
+                .hasRootCauseInstanceOf(java.net.ConnectException.class)
                 .hasMessageNotContaining(ENCODED_SERVICE_KEY);
     }
 
@@ -157,6 +175,7 @@ class TourApiFestivalProviderTest {
         assertThatThrownBy(() -> testProvider.provider.findFestivals(region(), START, END))
                 .isInstanceOf(TourApiProviderException.class)
                 .hasMessage("TourAPI returned an invalid JSON response.")
+                .hasCauseInstanceOf(com.fasterxml.jackson.core.JsonProcessingException.class)
                 .hasMessageNotContaining(ENCODED_SERVICE_KEY);
     }
 

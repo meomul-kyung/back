@@ -31,7 +31,9 @@ class TourApiPlaceProviderTest {
             String query = request.getURI().getRawQuery();
             assertThat(query).contains("serviceKey=" + ENCODED_SERVICE_KEY)
                     .doesNotContain("%252F")
-                    .contains("areaCode=1", "sigunguCode=2", "_type=json", "pageNo=1", "numOfRows=50");
+                    .contains("MobileOS=ETC", "MobileApp=meomul-kyung", "_type=json", "pageNo=1", "numOfRows=50",
+                            "areaCode=1", "sigunguCode=2")
+                    .doesNotContain("contentTypeId=");
         }).andRespond(withSuccess(successItemsJson(), MediaType.APPLICATION_JSON));
 
         List<TourPlaceProvider.Place> places = testProvider.provider.findPlaces(region());
@@ -127,7 +129,8 @@ class TourApiPlaceProviderTest {
 
         assertThatThrownBy(() -> testProvider.provider.findPlaces(region()))
                 .isInstanceOf(TourApiProviderException.class)
-                .hasMessage("TourAPI returned an HTTP error.")
+                .hasMessage("TourAPI returned HTTP status 500.")
+                .hasCauseInstanceOf(org.springframework.web.client.RestClientResponseException.class)
                 .hasMessageNotContaining(ENCODED_SERVICE_KEY);
     }
 
@@ -135,12 +138,29 @@ class TourApiPlaceProviderTest {
     void handlesCommunicationFailureWithoutLeakingTheServiceKey() {
         TestProvider testProvider = provider(ENCODED_SERVICE_KEY);
         testProvider.server.expect(anything()).andRespond(request -> {
-            throw new ResourceAccessException("simulated timeout");
+            throw new ResourceAccessException("simulated timeout", new java.net.SocketTimeoutException("simulated timeout"));
         });
 
         assertThatThrownBy(() -> testProvider.provider.findPlaces(region()))
                 .isInstanceOf(TourApiProviderException.class)
-                .hasMessage("TourAPI request failed.")
+                .hasMessage("TourAPI request timed out (SocketTimeoutException).")
+                .hasCauseInstanceOf(ResourceAccessException.class)
+                .hasRootCauseInstanceOf(java.net.SocketTimeoutException.class)
+                .hasMessageNotContaining(ENCODED_SERVICE_KEY);
+    }
+
+    @Test
+    void classifiesConnectionFailureWithoutLeakingTheServiceKey() {
+        TestProvider testProvider = provider(ENCODED_SERVICE_KEY);
+        testProvider.server.expect(anything()).andRespond(request -> {
+            throw new ResourceAccessException("simulated connection failure", new java.net.ConnectException("simulated connection failure"));
+        });
+
+        assertThatThrownBy(() -> testProvider.provider.findPlaces(region()))
+                .isInstanceOf(TourApiProviderException.class)
+                .hasMessage("TourAPI connection failed (ConnectException).")
+                .hasCauseInstanceOf(ResourceAccessException.class)
+                .hasRootCauseInstanceOf(java.net.ConnectException.class)
                 .hasMessageNotContaining(ENCODED_SERVICE_KEY);
     }
 
@@ -152,6 +172,7 @@ class TourApiPlaceProviderTest {
         assertThatThrownBy(() -> testProvider.provider.findPlaces(region()))
                 .isInstanceOf(TourApiProviderException.class)
                 .hasMessage("TourAPI returned an invalid JSON response.")
+                .hasCauseInstanceOf(com.fasterxml.jackson.core.JsonProcessingException.class)
                 .hasMessageNotContaining(ENCODED_SERVICE_KEY);
     }
 

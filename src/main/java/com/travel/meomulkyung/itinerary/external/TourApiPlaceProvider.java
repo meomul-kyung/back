@@ -44,11 +44,11 @@ public class TourApiPlaceProvider implements TourPlaceProvider {
             String response = restClient.get().uri(requestUri(regionCode)).retrieve().body(String.class);
             return parseResponse(response);
         } catch (RestClientResponseException exception) {
-            throw new TourApiProviderException("TourAPI returned an HTTP error.");
+            throw TourApiProviderException.fromHttpError(exception);
         } catch (ResourceAccessException exception) {
-            throw new TourApiProviderException("TourAPI request failed.");
+            throw TourApiProviderException.fromResourceAccessError(exception);
         } catch (RestClientException exception) {
-            throw new TourApiProviderException("TourAPI request failed.");
+            throw TourApiProviderException.fromClientError(exception);
         }
     }
 
@@ -93,7 +93,7 @@ public class TourApiPlaceProvider implements TourPlaceProvider {
             }
             return places;
         } catch (JsonProcessingException exception) {
-            throw new TourApiProviderException("TourAPI returned an invalid JSON response.");
+            throw new TourApiProviderException("TourAPI returned an invalid JSON response.", exception);
         }
     }
 

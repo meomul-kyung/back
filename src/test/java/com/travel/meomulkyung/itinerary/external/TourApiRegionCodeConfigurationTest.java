@@ -102,6 +102,20 @@ class TourApiRegionCodeConfigurationTest {
                 .isEqualTo("${TOUR_API_SERVICE_KEY:}");
     }
 
+    @Test
+    void readTimeoutDefaultsToFifteenSecondsAndCanBeOverriddenByEnvironmentProperty() throws IOException {
+        assertThat(rawProperties().getProperty("tour-api.read-timeout"))
+                .isEqualTo("${TOUR_API_READ_TIMEOUT:15s}");
+        assertThat(properties().getConnectTimeout()).isEqualTo(java.time.Duration.ofSeconds(2));
+        assertThat(properties().getReadTimeout()).isEqualTo(java.time.Duration.ofSeconds(15));
+
+        TourApiProperties overridden = new Binder(java.util.List.of(new MapConfigurationPropertySource(
+                Map.of("tour-api.read-timeout", "20s"))))
+                .bind("tour-api", Bindable.of(TourApiProperties.class))
+                .orElseThrow(() -> new IllegalStateException("TourAPI timeout override did not bind."));
+        assertThat(overridden.getReadTimeout()).isEqualTo(java.time.Duration.ofSeconds(20));
+    }
+
     private TourApiProperties requestProperties() throws IOException {
         TourApiProperties properties = properties();
         properties.setBaseUrl("https://tour-api.example/KorService2");
@@ -112,6 +126,7 @@ class TourApiRegionCodeConfigurationTest {
     private TourApiProperties properties() throws IOException {
         Map<String, Object> values = new LinkedHashMap<>();
         rawProperties().forEach((key, value) -> values.put((String) key, value));
+        values.put("tour-api.read-timeout", "15s");
         return new Binder(java.util.List.of(new MapConfigurationPropertySource(values)))
                 .bind("tour-api", Bindable.of(TourApiProperties.class))
                 .orElseThrow(() -> new IllegalStateException("TourAPI properties did not bind."));
