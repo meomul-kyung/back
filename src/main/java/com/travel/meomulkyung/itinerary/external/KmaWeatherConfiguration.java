@@ -19,7 +19,7 @@ import java.time.Clock;
  * 두 개가 되면 ObjectMapper를 주입받는 쪽에서 모호해지기 때문이다.
  */
 @Configuration
-@EnableConfigurationProperties(KmaWeatherProperties.class)
+@EnableConfigurationProperties({KmaWeatherProperties.class, MidTermWeatherProperties.class})
 public class KmaWeatherConfiguration {
 
     @Bean
@@ -31,9 +31,28 @@ public class KmaWeatherConfiguration {
     }
 
     @Bean
+    RestClient kmaMidRestClient(MidTermWeatherProperties properties) {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(properties.getConnectTimeout());
+        requestFactory.setReadTimeout(properties.getReadTimeout());
+        return RestClient.builder().requestFactory(requestFactory).build();
+    }
+
+    /**
+     * 단기예보로 앞날짜를, 중기예보로 뒷날짜를 채운다.
+     *
+     * <p>두 구현체를 각각 빈으로 올리지 않고 여기서 직접 생성한다.
+     * 셋 다 WeatherProvider 타입이라 빈으로 올리면 주입이 모호해지기 때문이다.
+     */
+    @Bean
     WeatherProvider weatherProvider(RestClient kmaRestClient,
+                                    RestClient kmaMidRestClient,
                                     KmaWeatherProperties properties,
+                                    MidTermWeatherProperties midProperties,
                                     Clock clock) {
-        return new KmaWeatherProvider(kmaRestClient, new ObjectMapper(), properties, clock);
+        ObjectMapper objectMapper = new ObjectMapper();
+        return new CompositeWeatherProvider(
+                new KmaWeatherProvider(kmaRestClient, objectMapper, properties, clock),
+                new MidTermWeatherProvider(kmaMidRestClient, objectMapper, midProperties, clock));
     }
 }
