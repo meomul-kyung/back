@@ -4,12 +4,17 @@ import com.travel.meomulkyung.itinerary.domain.ItineraryItem;
 import com.travel.meomulkyung.itinerary.domain.ItineraryItemType;
 import com.travel.meomulkyung.itinerary.domain.TransportMode;
 import com.travel.meomulkyung.itinerary.dto.ItineraryRouteResponses;
+import com.travel.meomulkyung.itinerary.external.RegionTransitProperties;
 import com.travel.meomulkyung.itinerary.external.RouteProvider;
+import com.travel.meomulkyung.region.domain.Region;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -17,7 +22,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ItineraryRouteServiceTest {
 
     private final RecordingRouteProvider provider = new RecordingRouteProvider();
-    private final ItineraryRouteService service = new ItineraryRouteService(null, provider, Clock.systemUTC());
+    private final RegionTransitProperties regionTransit = regionTransitProperties();
+    private final ItineraryRouteService service =
+            new ItineraryRouteService(null, provider, Clock.systemUTC(), regionTransit);
 
     @Test
     void connectsOnlyItemsWithCoordinatesInVisitOrder() {
@@ -84,6 +91,52 @@ class ItineraryRouteServiceTest {
         assertThat(TransportMode.from(null)).contains(TransportMode.CAR);
         assertThat(TransportMode.from("transit")).contains(TransportMode.TRANSIT);
         assertThat(TransportMode.from("bike")).isEmpty();
+    }
+
+    @Test
+    void freeFareRegionGetsBothTimetableAndBadgeOnTransit() {
+        ItineraryRouteResponses.RegionTransit regionTransit =
+                service.regionTransit(region(7L, "청송"), TransportMode.TRANSIT);
+
+        assertThat(regionTransit).isNotNull();
+        assertThat(regionTransit.timetable().url()).isEqualTo("https://www.cs.go.kr/timetable");
+        assertThat(regionTransit.timetable().source()).isEqualTo("청송군 농어촌버스 정보");
+        assertThat(regionTransit.freeBus().label()).isEqualTo("관내 버스 무료");
+        assertThat(regionTransit.freeBus().caution()).isNotBlank();
+        assertThat(regionTransit.freeBus().basis()).isNotBlank();
+        assertThat(regionTransit.checkedOn()).isEqualTo(LocalDate.of(2026, 9, 17));
+    }
+
+    @Test
+    void paidRegionGetsTimetableWithoutBadge() {
+        ItineraryRouteResponses.RegionTransit regionTransit =
+                service.regionTransit(region(1L, "안동"), TransportMode.TRANSIT);
+
+        assertThat(regionTransit.timetable().url()).isEqualTo("https://bus.andong.go.kr/");
+        assertThat(regionTransit.freeBus()).isNull();
+    }
+
+    @Test
+    void carModeHasNoRegionTransitEvenForFreeFareRegion() {
+        assertThat(service.regionTransit(region(7L, "청송"), TransportMode.CAR)).isNull();
+    }
+
+    @Test
+    void regionWithoutConfigurationHasNoRegionTransit() {
+        assertThat(service.regionTransit(region(99L, "설정 없음"), TransportMode.TRANSIT)).isNull();
+        assertThat(service.regionTransit(null, TransportMode.TRANSIT)).isNull();
+    }
+
+    private static RegionTransitProperties regionTransitProperties() {
+        RegionTransitProperties properties = new RegionTransitProperties();
+        properties.setTimetableUrls(Map.of(1L, "https://bus.andong.go.kr/", 7L, "https://www.cs.go.kr/timetable"));
+        properties.setFreeBusRegions(Set.of(7L));
+        properties.setCheckedOn(LocalDate.of(2026, 9, 17));
+        return properties;
+    }
+
+    private static Region region(Long id, String name) {
+        return new Region(id, name, null, null, name + " 소개", null);
     }
 
     private static ItineraryItem place(int sequence, String title, double latitude, double longitude) {

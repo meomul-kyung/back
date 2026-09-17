@@ -4,8 +4,10 @@ import com.travel.meomulkyung.itinerary.domain.Itinerary;
 import com.travel.meomulkyung.itinerary.domain.ItineraryItem;
 import com.travel.meomulkyung.itinerary.domain.TransportMode;
 import com.travel.meomulkyung.itinerary.dto.ItineraryRouteResponses;
+import com.travel.meomulkyung.itinerary.external.RegionTransitProperties;
 import com.travel.meomulkyung.itinerary.external.RouteProvider;
 import com.travel.meomulkyung.itinerary.repository.ItineraryRepository;
+import com.travel.meomulkyung.region.domain.Region;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class ItineraryRouteService {
     private final ItineraryRepository itineraries;
     private final RouteProvider routeProvider;
     private final Clock clock;
+    private final RegionTransitProperties regionTransitProperties;
 
     public ItineraryRouteResponses.DayRoutes routes(Long userId, Long itineraryId, int dayNumber, String modeValue) {
         TransportMode mode = TransportMode.from(modeValue).orElseThrow(() ->
@@ -60,7 +63,34 @@ public class ItineraryRouteService {
                 segments(dayItems, mode),
                 mode == TransportMode.CAR ? CAR_NOTICE : TRANSIT_NOTICE,
                 mode == TransportMode.CAR ? SOURCE_CAR : SOURCE_TRANSIT,
+                regionTransit(itinerary.getRegion(), mode),
                 OffsetDateTime.now(clock.withZone(SEOUL)));
+    }
+
+    /**
+     * 지역 버스 안내를 설정에서 채운다. 외부 호출은 없다.
+     *
+     * <p>자동차 조회에는 의미가 없어 null을 내리고, 설정에 아무것도 없는 지역도 null이다.
+     * 지역이 무료여도 구간 요금({@code Segment.fare})은 실측값을 그대로 둔다.
+     * 시·군을 넘는 노선은 유료일 수 있어 둘이 달라도 모순이 아니다.
+     */
+    ItineraryRouteResponses.RegionTransit regionTransit(Region region, TransportMode mode) {
+        if (mode != TransportMode.TRANSIT || region == null) {
+            return null;
+        }
+        Long regionId = region.getId();
+        String url = regionTransitProperties.timetableUrl(regionId);
+        ItineraryRouteResponses.Timetable timetable = url == null || url.isBlank()
+                ? null
+                : new ItineraryRouteResponses.Timetable(url, regionTransitProperties.timetableSource(regionId));
+        ItineraryRouteResponses.FreeBus freeBus = regionTransitProperties.isFreeBusRegion(regionId)
+                ? new ItineraryRouteResponses.FreeBus(regionTransitProperties.getFreeBusLabel(),
+                        regionTransitProperties.getFreeBusCaution(), regionTransitProperties.getFreeBusBasis())
+                : null;
+        if (timetable == null && freeBus == null) {
+            return null;
+        }
+        return new ItineraryRouteResponses.RegionTransit(timetable, freeBus, regionTransitProperties.getCheckedOn());
     }
 
     /** 좌표가 있는 장소만 방문 순서대로 이어 구간을 만든다. (도착·휴식·출발, 좌표 없는 기존 항목은 건너뜀) */
