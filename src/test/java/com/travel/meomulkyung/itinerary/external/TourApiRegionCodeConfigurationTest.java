@@ -27,7 +27,7 @@ class TourApiRegionCodeConfigurationTest {
     private static final Map<Long, String> OFFICIAL_SIGUNGU_CODES = Map.ofEntries(
             Map.entry(1L, "11"), Map.entry(2L, "14"), Map.entry(3L, "7"), Map.entry(4L, "9"),
             Map.entry(5L, "8"), Map.entry(6L, "13"), Map.entry(7L, "21"), Map.entry(8L, "19"),
-            Map.entry(9L, "20"), Map.entry(10L, "16"), Map.entry(11L, "18"), Map.entry(12L, "12"),
+            Map.entry(9L, "20"), Map.entry(10L, "15"), Map.entry(11L, "18"), Map.entry(12L, "12"),
             Map.entry(13L, "3"), Map.entry(14L, "10"), Map.entry(15L, "17"));
 
     @Test
