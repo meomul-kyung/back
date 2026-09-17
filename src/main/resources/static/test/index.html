@@ -216,6 +216,35 @@
 </div>
 
 <div class="card">
+  <div class="head"><span class="m GET">GET</span><span class="path">/api/itineraries/{id}/days/{dayNumber}/routes?mode=</span><span class="lock">🔒</span></div>
+  <div class="desc">
+    하루치 장소 간 이동정보. CAR는 카카오모빌리티, TRANSIT은 카카오맵 대중교통 경로를 <b>실시간 호출</b>한다(저장 안 함).
+    좌표가 있는 장소만 순서대로 잇는다. 구간별 <code>status</code>: OK · NEARBY · NO_STOP · NO_ROUTE · UNAVAILABLE
+  </div>
+  <div class="row">
+    <label>itineraryId</label><input type="number" id="rtId" value="">
+    <label>dayNumber</label><input type="number" id="rtDay" value="1" min="1">
+    <label>mode</label><select id="rtMode"><option>CAR</option><option>TRANSIT</option></select>
+  </div>
+  <button onclick="call('r10b','GET','/api/itineraries/'+val('rtId')+'/days/'+val('rtDay')+'/routes?mode='+val('rtMode'))">실행</button>
+  <pre id="r10b">—</pre>
+</div>
+
+<div class="card">
+  <div class="head"><span class="m GET">GET</span><span class="path">/api/itineraries/{id}/items/{itemId}/operation-info</span><span class="lock">🔒</span></div>
+  <div class="desc">
+    장소 운영시간·휴무일. TourAPI 소개정보를 <b>실시간 호출</b>한다(저장 안 함). 관광지·문화시설·음식점만 지원.
+    <code>status</code>: OK · NO_DATA · NOT_SUPPORTED · UNAVAILABLE. 방문일이 휴무일일 수 있으면 <code>closedDayWarning</code>이 채워진다.
+  </div>
+  <div class="row">
+    <label>itineraryId</label><input type="number" id="opId" value="">
+    <label>itemId</label><input type="number" id="opItem" value="">
+  </div>
+  <button onclick="call('r10c','GET','/api/itineraries/'+val('opId')+'/items/'+val('opItem')+'/operation-info')">실행</button>
+  <pre id="r10c">—</pre>
+</div>
+
+<div class="card">
   <div class="head">
     <span class="m PUT">PUT</span><span class="m DELETE">DELETE</span>
     <span class="path">/api/itineraries/{id}/bookmark</span><span class="lock">🔒</span>
