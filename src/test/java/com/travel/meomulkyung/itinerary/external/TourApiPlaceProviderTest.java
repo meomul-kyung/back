@@ -40,9 +40,9 @@ class TourApiPlaceProviderTest {
 
         assertThat(places).containsExactly(
                 new TourPlaceProvider.Place(101L, "Place A", ItineraryItemType.TOURIST_SPOT,
-                        "https://image.example/a.jpg", "Address A Detail", 37.1234, 127.5678),
+                        "https://image.example/a.jpg", "Address A Detail", 37.1234, 127.5678, "12"),
                 new TourPlaceProvider.Place(102L, "Place B", ItineraryItemType.RESTAURANT,
-                        "https://image.example/b-thumb.jpg", "Address B", 35.1, 129.2));
+                        "https://image.example/b-thumb.jpg", "Address B", 35.1, 129.2, "39"));
         testProvider.server.verify();
     }
 
@@ -66,7 +66,7 @@ class TourApiPlaceProviderTest {
 
         assertThat(testProvider.provider.findPlaces(region())).containsExactly(
                 new TourPlaceProvider.Place(301L, "Experience", ItineraryItemType.EXPERIENCE,
-                        null, null, null, null));
+                        null, null, null, null, "28"));
     }
 
     @Test
@@ -89,11 +89,11 @@ class TourApiPlaceProviderTest {
                 """, MediaType.APPLICATION_JSON));
 
         assertThat(testProvider.provider.findPlaces(region())).containsExactly(
-                new TourPlaceProvider.Place(12L, "Tourist spot", ItineraryItemType.TOURIST_SPOT, null, null, null, null),
-                new TourPlaceProvider.Place(14L, "Culture", ItineraryItemType.TOURIST_SPOT, null, null, null, null),
-                new TourPlaceProvider.Place(28L, "Experience", ItineraryItemType.EXPERIENCE, null, null, null, null),
-                new TourPlaceProvider.Place(38L, "Shopping", ItineraryItemType.TOURIST_SPOT, null, null, null, null),
-                new TourPlaceProvider.Place(39L, "Restaurant", ItineraryItemType.RESTAURANT, null, null, null, null));
+                new TourPlaceProvider.Place(12L, "Tourist spot", ItineraryItemType.TOURIST_SPOT, null, null, null, null, "12"),
+                new TourPlaceProvider.Place(14L, "Culture", ItineraryItemType.TOURIST_SPOT, null, null, null, null, "14"),
+                new TourPlaceProvider.Place(28L, "Experience", ItineraryItemType.EXPERIENCE, null, null, null, null, "28"),
+                new TourPlaceProvider.Place(38L, "Shopping", ItineraryItemType.TOURIST_SPOT, null, null, null, null, "38"),
+                new TourPlaceProvider.Place(39L, "Restaurant", ItineraryItemType.RESTAURANT, null, null, null, null, "39"));
     }
 
     @Test

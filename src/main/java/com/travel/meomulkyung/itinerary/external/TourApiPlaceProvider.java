@@ -144,7 +144,8 @@ public class TourApiPlaceProvider implements TourPlaceProvider {
                 firstNonBlank(text(item, "firstimage"), text(item, "firstimage2")),
                 address(item),
                 doubleValue(item, "mapy"),
-                doubleValue(item, "mapx")));
+                doubleValue(item, "mapx"),
+                contentTypeId));
     }
 
     private ItineraryItemType itemType(String contentTypeId) {
