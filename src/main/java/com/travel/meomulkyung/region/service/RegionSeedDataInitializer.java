@@ -58,13 +58,22 @@ public class RegionSeedDataInitializer implements ApplicationRunner {
     }
 
     private void seedScores(Region region, RegionRecommendationProfile profile, Map<String, Tag> tagsByCode) {
-        profile.tagScores().forEach((tag, score) -> saveScoreIfAbsent(region, tagsByCode.get(tag.getCode()), score));
-        profile.companionScores().forEach((tag, score) -> saveScoreIfAbsent(region, tagsByCode.get(tag.getCode()), score));
+        profile.tagScores().forEach((tag, score) -> syncScore(region, tagsByCode.get(tag.getCode()), score));
+        profile.companionScores().forEach((tag, score) -> syncScore(region, tagsByCode.get(tag.getCode()), score));
     }
 
-    private void saveScoreIfAbsent(Region region, Tag tag, int score) {
-        if (regionTagScoreRepository.findByRegionAndTag(region, tag).isEmpty()) {
-            regionTagScoreRepository.save(new RegionTagScore(region, tag, score));
-        }
+    /**
+     * 점수의 원본은 {@link RegionRecommendationProfiles}이므로 이미 저장된 값이 코드와 다르면 맞춘다.
+     *
+     * <p>예전에는 행이 없을 때만 넣고 기존 행은 그대로 뒀다. 그래서 코드에서 점수를 고쳐 배포해도
+     * 이미 시드된 환경에서는 아무 변화가 없었고, "배포했는데 추천이 그대로"인 상태를 만들기 쉬웠다.
+     *
+     * <p>대신 DB에서 직접 손댄 점수는 다음 기동 때 코드 값으로 되돌아간다. 점수 조정은 DB가 아니라
+     * 코드에서 하고 배포하는 것을 전제로 한다.
+     */
+    private void syncScore(Region region, Tag tag, int score) {
+        regionTagScoreRepository.findByRegionAndTag(region, tag)
+                .ifPresentOrElse(existing -> existing.changeScore(score),
+                        () -> regionTagScoreRepository.save(new RegionTagScore(region, tag, score)));
     }
 }
