@@ -33,7 +33,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 
 @WebMvcTest(RegionRecommendationController.class)
-@Import({RegionRecommendationService.class, RegionRecommendationScoreCalculator.class, SecurityConfig.class})
+@Import({RegionRecommendationService.class, RegionRecommendationScoreCalculator.class, SecurityConfig.class,
+        com.travel.meomulkyung.recommendation.RecommendationTestConfig.class})
 class RegionRecommendationControllerTest {
 
     private static final String VALID_REQUEST = """

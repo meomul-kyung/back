@@ -42,4 +42,9 @@ public class RegionTagScore {
         this.tag = tag;
         this.score = score;
     }
+
+    /** 점수의 원본은 코드({@code RegionRecommendationProfiles})이므로 시드 시 코드 값으로 맞춘다. */
+    public void changeScore(int score) {
+        this.score = score;
+    }
 }

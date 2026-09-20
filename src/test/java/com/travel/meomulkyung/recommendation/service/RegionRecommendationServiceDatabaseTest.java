@@ -15,7 +15,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import({RegionSeedDataInitializer.class, RegionRecommendationScoreCalculator.class, RegionRecommendationService.class})
+@Import({RegionSeedDataInitializer.class, RegionRecommendationScoreCalculator.class, RegionRecommendationService.class,
+        com.travel.meomulkyung.recommendation.RecommendationTestConfig.class})
 class RegionRecommendationServiceDatabaseTest {
 
     @Autowired
