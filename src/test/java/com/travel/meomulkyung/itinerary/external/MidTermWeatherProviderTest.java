@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
@@ -26,6 +27,8 @@ class MidTermWeatherProviderTest {
     private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
     /** 2026-09-10 13:00 KST → 같은 날 06시 발표분을 쓴다(4일 후 ~ 10일 후 제공). */
     private static final Clock FIXED_CLOCK = Clock.fixed(Instant.parse("2026-09-10T04:00:00Z"), SEOUL);
+    /** 2026-09-10 21:00 KST → 같은 날 18시 발표분이 최신이라 4일 후가 비는 시간대다. */
+    private static final Clock EVENING_CLOCK = Clock.fixed(Instant.parse("2026-09-10T12:00:00Z"), SEOUL);
     private static final LocalDate ANNOUNCED = LocalDate.of(2026, 9, 10);
 
     private RestClient.Builder builder;
@@ -97,6 +100,72 @@ class MidTermWeatherProviderTest {
         assertThat(provider.weather(region, ANNOUNCED.plusDays(3)).available()).isFalse();
         assertThat(provider.weather(region, ANNOUNCED.plusDays(11)).available()).isFalse();
         server.verify();
+    }
+
+    @Test
+    @DisplayName("18시 발표가 최신인 저녁에도 4일 후는 같은 날 06시 발표로 채운다")
+    void fillsFourthDayFromPreviousAnnouncementInTheEvening() {
+        provider = new MidTermWeatherProvider(builder.build(), new ObjectMapper(), properties, EVENING_CLOCK);
+        server.expect(requestTo(allOf(containsString("getMidTa"), containsString("tmFc=202609100600"))))
+                .andRespond(withSuccess(temperatureBody(), MediaType.APPLICATION_JSON));
+        server.expect(requestTo(allOf(containsString("getMidLandFcst"), containsString("tmFc=202609100600"))))
+                .andRespond(withSuccess(landBody(), MediaType.APPLICATION_JSON));
+
+        WeatherProvider.Weather fourth = provider.weather(region, ANNOUNCED.plusDays(4));
+
+        assertThat(fourth.available()).isTrue();
+        assertThat(fourth.icon()).isEqualTo("SUNNY");
+        assertThat(fourth.minimumTemperature()).isEqualTo(15);
+        assertThat(fourth.maximumTemperature()).isEqualTo(26);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("저녁에도 5일 후부터는 최신 18시 발표를 그대로 쓴다")
+    void usesLatestAnnouncementFromFifthDayInTheEvening() {
+        provider = new MidTermWeatherProvider(builder.build(), new ObjectMapper(), properties, EVENING_CLOCK);
+        server.expect(requestTo(allOf(containsString("getMidTa"), containsString("tmFc=202609101800"))))
+                .andRespond(withSuccess(temperatureBody(), MediaType.APPLICATION_JSON));
+        server.expect(requestTo(allOf(containsString("getMidLandFcst"), containsString("tmFc=202609101800"))))
+                .andRespond(withSuccess(landBody(), MediaType.APPLICATION_JSON));
+
+        assertThat(provider.weather(region, ANNOUNCED.plusDays(5)).available()).isTrue();
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("하루 어느 시각에 조회해도 단기예보 다음 날(4일 후)이 비지 않는다")
+    void neverLeavesGapAfterShortTermForecast() {
+        for (int hour = 0; hour < 24; hour++) {
+            LocalDateTime now = LocalDateTime.of(2026, 9, 10, hour, 0);
+            MidTermWeatherProvider.Announcement latest = MidTermWeatherProvider.latestAnnouncement(now);
+            MidTermWeatherProvider.Announcement previous = MidTermWeatherProvider.previousAnnouncement(latest);
+            LocalDate earliest = firstForecastDate(latest).isBefore(firstForecastDate(previous))
+                    ? firstForecastDate(latest)
+                    : firstForecastDate(previous);
+
+            assertThat(earliest)
+                    .describedAs("%02d시 조회", hour)
+                    .isBeforeOrEqualTo(now.toLocalDate().plusDays(4));
+        }
+    }
+
+    @Test
+    @DisplayName("직전 회차는 18시 발표면 같은 날 06시, 06시 발표면 전날 18시다")
+    void resolvesPreviousAnnouncement() {
+        MidTermWeatherProvider.Announcement evening =
+                MidTermWeatherProvider.previousAnnouncement(new MidTermWeatherProvider.Announcement(ANNOUNCED, "1800"));
+        assertThat(evening.date()).isEqualTo(ANNOUNCED);
+        assertThat(evening.time()).isEqualTo("0600");
+
+        MidTermWeatherProvider.Announcement morning =
+                MidTermWeatherProvider.previousAnnouncement(new MidTermWeatherProvider.Announcement(ANNOUNCED, "0600"));
+        assertThat(morning.date()).isEqualTo(ANNOUNCED.minusDays(1));
+        assertThat(morning.time()).isEqualTo("1800");
+    }
+
+    private static LocalDate firstForecastDate(MidTermWeatherProvider.Announcement announcement) {
+        return announcement.date().plusDays(announcement.firstForecastDay());
     }
 
     @Test

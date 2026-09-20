@@ -17,6 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -24,8 +25,11 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p><b>예보 범위는 발표일 기준</b>이며 발표 회차에 따라 다르다.
  * 06시 발표는 4일 후 ~ 10일 후, 18시 발표는 5일 후 ~ 10일 후를 제공한다.
- * 오프셋이 "오늘"이 아니라 "발표일"을 기준으로 세어지므로, 어제 18시 발표의 5일 후는
- * 오늘의 4일 후와 같다. 덕분에 단기예보(오늘 ~ 3일 후)와 사이에 빈 날짜가 생기지 않는다.
+ * 오프셋이 "오늘"이 아니라 "발표일"을 기준으로 세어진다.
+ *
+ * <p>그래서 18시 발표가 최신인 저녁에는 최신 회차만으로 단기예보(오늘 ~ 3일 후)와 사이가
+ * 붙지 않아 <b>4일 후 하루가 빈다</b>. 최신 회차가 담지 못하는 날짜는 직전 회차
+ * (같은 날 06시 발표, 4일 후부터 제공)로 한 번 더 조회해 이 구멍을 메운다.
  *
  * <p>두 API를 함께 쓴다. 날씨 상태는 광역 단위인 중기육상예보(getMidLandFcst)에서,
  * 최저·최고기온은 시군 단위인 중기기온(getMidTa)에서 가져온다. 육상예보는 운영 지역 15곳이
@@ -78,14 +82,28 @@ public class MidTermWeatherProvider implements WeatherProvider {
             return UNAVAILABLE;
         }
 
-        Announcement announcement = latestAnnouncement(LocalDateTime.now(clock));
+        Announcement latest = latestAnnouncement(LocalDateTime.now(clock));
+        Announcement previous = previousAnnouncement(latest);
+        evictOtherAnnouncements(latest, previous);
+
+        // 회차 선택은 예보 범위만 보고 한다. 조회 실패까지 앞 회차로 되돌리면 기상청 장애 때
+        // 호출이 두 배가 되는데, 같은 이유로 어차피 실패한다.
+        Announcement announcement = covers(latest, date) ? latest : previous;
+        return weather(temperatureRegionId, announcement, date);
+    }
+
+    private boolean covers(Announcement announcement, LocalDate date) {
         LocalDate first = announcement.date().plusDays(announcement.firstForecastDay());
         LocalDate last = announcement.date().plusDays(properties.getLastForecastDay());
-        if (date.isBefore(first) || date.isAfter(last)) {
+        return !date.isBefore(first) && !date.isAfter(last);
+    }
+
+    /** 발표 회차 하나만 놓고 조회한다. 그 회차의 예보 범위를 벗어나면 호출하지 않는다. */
+    private Weather weather(String temperatureRegionId, Announcement announcement, LocalDate date) {
+        if (!covers(announcement, date)) {
             return UNAVAILABLE;
         }
 
-        evictOtherAnnouncements(announcement);
         Map<LocalDate, int[]> temperatures = temperatureCache.computeIfAbsent(
                 temperatureRegionId + "|" + announcement.key(),
                 ignored -> fetchTemperatures(temperatureRegionId, announcement));
@@ -114,9 +132,24 @@ public class MidTermWeatherProvider implements WeatherProvider {
         return new Announcement(adjusted.toLocalDate().minusDays(1), "1800");
     }
 
-    private void evictOtherAnnouncements(Announcement announcement) {
-        landCache.keySet().removeIf(key -> !key.equals(announcement.key()));
-        temperatureCache.keySet().removeIf(key -> !key.endsWith("|" + announcement.key()));
+    /**
+     * 최신 회차가 담지 못하는 앞 날짜를 채우기 위한 직전 회차.
+     *
+     * <p>18시 발표(5일 후부터)가 최신일 때 같은 날 06시 발표(4일 후부터)가 4일 후를 맡는다.
+     * 06시 발표가 최신이면 이미 4일 후부터 제공하므로 이 회차는 쓰이지 않지만,
+     * 경계 판단을 {@code weather(...)} 한 곳에만 두기 위해 항상 돌려준다.
+     */
+    static Announcement previousAnnouncement(Announcement announcement) {
+        return "1800".equals(announcement.time())
+                ? new Announcement(announcement.date(), "0600")
+                : new Announcement(announcement.date().minusDays(1), "1800");
+    }
+
+    private void evictOtherAnnouncements(Announcement latest, Announcement previous) {
+        Set<String> usable = Set.of(latest.key(), previous.key());
+        landCache.keySet().removeIf(key -> !usable.contains(key));
+        temperatureCache.keySet().removeIf(
+                key -> usable.stream().noneMatch(announcementKey -> key.endsWith("|" + announcementKey)));
     }
 
     private Map<LocalDate, String> fetchLand(Announcement announcement) {
