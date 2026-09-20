@@ -52,6 +52,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/travel-options").permitAll()
                         // 개인 기록이 아니라 전체 합계라 로그인 전에도 보여준다
                         .requestMatchers(HttpMethod.GET, "/api/stats/summary").permitAll()
+                        // 지역 대표 사진도 공개 정보다
+                        .requestMatchers(HttpMethod.GET, "/api/regions/*/gallery").permitAll()
                         // OAuth2 로그인 시작/콜백 엔드포인트
                         .requestMatchers("/test/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/**").permitAll()
