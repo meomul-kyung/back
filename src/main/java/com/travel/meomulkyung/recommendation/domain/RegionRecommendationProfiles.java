@@ -7,6 +7,17 @@ import java.util.Map;
 public final class RegionRecommendationProfiles {
 
     public static final int PREFERENCE_TAG_WEIGHT = 10;
+    /**
+     * 동행 유형 점수(0~10)에 곱하는 가중치.
+     *
+     * <p>원점수를 그대로 더하면 동행이 순위에 거의 영향을 주지 못한다. 예전에는 취향 태그
+     * 점수가 정수라 합계가 겹치는 경우가 많았고 동행이 그 동점을 갈라 주는 역할을 했는데,
+     * 체류 점수가 연속값이 되면서 동점 자체가 사라졌기 때문이다.
+     *
+     * <p>2를 곱하면 동행을 바꿨을 때 상위 3위가 달라지는 비율이 예전 방식보다 높아지면서도,
+     * 취향 태그 1점(10점)을 넘지 않아 "취향 기반 추천"이라는 성격은 유지된다.
+     */
+    public static final int COMPANION_WEIGHT = 2;
     /** 수요 강도를 쓸 수 없을 때만 쓰는 폴백 가점. 이상 박수 범위에 들면 일괄로 준다. */
     public static final int STAY_DURATION_MATCH_SCORE = 4;
     /**

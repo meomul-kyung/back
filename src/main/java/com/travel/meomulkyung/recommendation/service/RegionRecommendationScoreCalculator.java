@@ -25,7 +25,8 @@ public class RegionRecommendationScoreCalculator {
         int preferenceScore = preferenceTags.stream()
                 .mapToInt(tag -> scoreFor(regionTagScores, tag.getCode()) * RegionRecommendationProfiles.PREFERENCE_TAG_WEIGHT)
                 .sum();
-        int companionScore = scoreFor(regionTagScores, companionType.getCode());
+        int companionScore = scoreFor(regionTagScores, companionType.getCode())
+                * RegionRecommendationProfiles.COMPANION_WEIGHT;
         return preferenceScore + companionScore + stayDurationScore(profile, nights, stayFit);
     }
 

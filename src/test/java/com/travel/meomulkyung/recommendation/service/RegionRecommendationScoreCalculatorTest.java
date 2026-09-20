@@ -32,7 +32,7 @@ class RegionRecommendationScoreCalculatorTest {
         double score = calculator.calculate(scores, andong, List.of(PreferenceTag.FOOD, PreferenceTag.WALKING),
                 CompanionType.FRIENDS, 2, null);
 
-        assertThat(score).isEqualTo((9 * 10) + (7 * 10) + 5 + 4);
+        assertThat(score).isEqualTo((9 * 10) + (7 * 10) + (5 * RegionRecommendationProfiles.COMPANION_WEIGHT) + 4);
     }
 
     @Test
@@ -47,7 +47,7 @@ class RegionRecommendationScoreCalculatorTest {
 
         double score = calculator.calculate(scores, ulleung, List.of(PreferenceTag.SEA), CompanionType.FRIENDS, 2, null);
 
-        assertThat(score).isEqualTo((10 * 10) + 5);
+        assertThat(score).isEqualTo((10 * 10) + (5 * RegionRecommendationProfiles.COMPANION_WEIGHT));
     }
 
     @Test
@@ -63,7 +63,7 @@ class RegionRecommendationScoreCalculatorTest {
         // 2박은 울릉의 이상 박수 범위(3~5박) 밖이라 폴백이었다면 0점이지만, 실측 체류 강도는 별개다.
         double score = calculator.calculate(scores, ulleung, List.of(PreferenceTag.SEA), CompanionType.FRIENDS, 2, 1.0);
 
-        assertThat(score).isEqualTo((10 * 10) + 5 + RegionRecommendationProfiles.STAY_FIT_WEIGHT);
+        assertThat(score).isEqualTo((10 * 10) + (5 * RegionRecommendationProfiles.COMPANION_WEIGHT) + RegionRecommendationProfiles.STAY_FIT_WEIGHT);
     }
 
     @Test
@@ -78,6 +78,6 @@ class RegionRecommendationScoreCalculatorTest {
 
         double score = calculator.calculate(scores, andong, List.of(PreferenceTag.FOOD), CompanionType.FRIENDS, 2, 0.0);
 
-        assertThat(score).isEqualTo((9 * 10) + 5);
+        assertThat(score).isEqualTo((9 * 10) + (5 * RegionRecommendationProfiles.COMPANION_WEIGHT));
     }
 }
